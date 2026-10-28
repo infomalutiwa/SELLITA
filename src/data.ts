@@ -1,6 +1,6 @@
 export const FIRMA = {
   name: 'SELLITA',
-  sub: 'Heizung & Sanitär',
+  sub: 'Sanitär • Leckortung • Sanierung',
   street: 'Rohrweg 20',
   city: '71116 Gärtringen',
   phone: '0178 30 14 260',

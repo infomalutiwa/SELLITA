@@ -9,6 +9,7 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { Experience } from './scene/Experience'
 import { Overlay } from './ui/Overlay'
 import { HudNav } from './ui/HudNav'
+import { Timeline } from './ui/Timeline'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
 import { S, sceneOf } from './state'
@@ -34,6 +35,7 @@ export default function App() {
   const [free, setFree] = useState(false)
   const [xray, setXray] = useState(false)
   const [legal, setLegal] = useState<LegalKind>(null)
+  const [playing, setPlaying] = useState(false)
   const lenis = useRef<Lenis | null>(null)
 
   useEffect(() => {
@@ -62,6 +64,30 @@ export default function App() {
     lenis.current?.scrollTo(p * max, { duration: 2.2 })
   }, [])
 
+  const stop = useCallback(() => {
+    setPlaying(false)
+    lenis.current?.scrollTo(window.scrollY, { immediate: true, force: true })
+  }, [])
+  const play = useCallback(() => {
+    if (playing) return stop()
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    if (S.target > 0.985) lenis.current?.scrollTo(0, { immediate: true })
+    setPlaying(true)
+    lenis.current?.scrollTo(max, { duration: Math.max(2, (1 - Math.min(S.target, 0.985)) * 65), easing: (t) => t, onComplete: () => setPlaying(false) })
+  }, [playing, stop])
+  const seek = useCallback((p: number, live: boolean) => {
+    const max = document.documentElement.scrollHeight - window.innerHeight
+    setPlaying(false)
+    if (live) lenis.current?.scrollTo(p * max, { immediate: true, force: true })
+    else lenis.current?.scrollTo(p * max, { duration: 2, force: true })
+  }, [])
+  useEffect(() => {
+    if (!playing) return
+    const off = () => setPlaying(false)
+    window.addEventListener('wheel', off, { passive: true }); window.addEventListener('touchstart', off, { passive: true }); window.addEventListener('keydown', off)
+    return () => { window.removeEventListener('wheel', off); window.removeEventListener('touchstart', off); window.removeEventListener('keydown', off) }
+  }, [playing])
+
   return (
     <>
       <GLBoundary><Experience /></GLBoundary>
@@ -87,7 +113,9 @@ export default function App() {
       {/* progress bar */}
       <ProgressBar />
 
-      <footer className="pointer-events-auto fixed bottom-3 left-4 z-30 flex gap-4 text-[11px] text-white/50 md:left-10">
+      {!free && <Timeline playing={playing} onPlay={play} onSeek={seek} />}
+
+      <footer className="pointer-events-auto fixed bottom-1.5 left-4 z-30 flex gap-4 text-[11px] text-white/50 md:left-10">
         <button onClick={() => setLegal('impressum')} className="hover:text-white">Impressum</button>
         <button onClick={() => setLegal('datenschutz')} className="hover:text-white">Datenschutz</button>
         <span className="hidden sm:inline">{FIRMA.street}, {FIRMA.city}</span>
@@ -115,7 +143,7 @@ function Loader() {
   return (
     <AnimatePresence>
       {!done && (
-        <motion.div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#0f141c]" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+        <motion.div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#07090e]" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
           <Logo big />
           <div className="h-[3px] w-56 overflow-hidden rounded-full bg-white/10">
             <div className="h-full bg-gradient-to-r from-[#ff5722] to-[#38bdf8] transition-all" style={{ width: `${Math.max(4, progress)}%` }} />

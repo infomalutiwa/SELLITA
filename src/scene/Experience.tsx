@@ -14,10 +14,10 @@ function Lights() {
   return (
     <>
       <ambientLight intensity={0.12} color="#b6c4d8" />
-      <directionalLight position={[-9, 7, 10]} intensity={2.4} color="#ffc99a" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.03} />
+      <directionalLight position={[-9, 7, 10]} intensity={2.0} color="#ffc99a" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.03} />
       <directionalLight position={[10, 4, -6]} intensity={0.5} color="#7aa7ff" />
       {/* Fotografische HDRI (Poly Haven, CC0): Licht, Reflexionen und Hintergrund */}
-      <Environment files="/ph/hdr/qwantani_dusk_2_puresky.hdr" background backgroundBlurriness={0.02} environmentIntensity={1.5} />
+      <Environment files="/ph/hdr/qwantani_dusk_2_puresky.hdr" background backgroundBlurriness={0.02} environmentIntensity={0.9} />
     </>
   )
 }
@@ -69,7 +69,7 @@ export function Experience() {
       </Suspense>
       <EffectComposer multisampling={S.mobile ? 0 : 4}>
         {!S.mobile && <N8AO aoRadius={0.7} distanceFalloff={1.2} intensity={2.2} quality="medium" color="#0b1018" />}
-        <Bloom intensity={S.mobile ? 0.5 : 0.7} luminanceThreshold={0.9} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
+        <Bloom intensity={S.mobile ? 0.35 : 0.5} luminanceThreshold={1.0} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
         <ToneMapping mode={ToneMappingMode.AGX} />
         <Noise opacity={0.035} premultiply />
         <Vignette eskil={false} offset={0.2} darkness={0.7} />

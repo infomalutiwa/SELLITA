@@ -1,4 +1,4 @@
-# SELLITA – Heizung & Sanitär · 3D-Scrollytelling
+# SELLITA – Sanitär • Leckortung • Sanierung · 3D-Scrollytelling
 
 Vite + React + TypeScript, `three` / `@react-three/fiber` / `drei` / `postprocessing`, `gsap` (ScrollTrigger) + `lenis`, Tailwind, framer-motion.
 

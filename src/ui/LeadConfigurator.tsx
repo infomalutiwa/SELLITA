@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { icons, Check, ChevronLeft, ChevronRight, MapPin, Mail, MessageCircle, Phone } from 'lucide-react'
+import { icons, Camera, Check, ChevronLeft, ChevronRight, MapPin, Mail, MessageCircle, Phone } from 'lucide-react'
 import { FIRMA, SERVICES, checkArea } from '../data'
 
 type IconName = keyof typeof icons
@@ -10,11 +10,12 @@ export function LeadConfigurator() {
   const [sel, setSel] = useState<string[]>([])
   const [ort, setOrt] = useState('')
   const [c, setC] = useState({ name: '', tel: '', mail: '', msg: '' })
+  const [photo, setPhoto] = useState<{ name: string; url: string } | null>(null)
   const area = useMemo(() => checkArea(ort), [ort])
 
   const toggle = (id: string) => setSel((s) => (s.includes(id) ? s.filter((x) => x !== id) : [...s, id]))
   const labels = SERVICES.filter((s) => sel.includes(s.id)).map((s) => s.label)
-  const text = `Anfrage über sellita-website\n\nLeistungen: ${labels.join(', ') || '–'}\nObjekt: ${ort || '–'}\nName: ${c.name}\nTelefon: ${c.tel}\nE-Mail: ${c.mail}\n${c.msg ? `\nNachricht: ${c.msg}` : ''}`
+  const text = `Anfrage über sellita-website\n\nLeistungen: ${labels.join(', ') || '–'}\nObjekt: ${ort || '–'}\nName: ${c.name}\nTelefon: ${c.tel}\nE-Mail: ${c.mail}\n${c.msg ? `\nNachricht: ${c.msg}` : ''}${photo ? `\nFoto: ${photo.name} (bitte als Anhang mitsenden)` : ''}`
   const mailto = `mailto:${FIRMA.mail}?subject=${encodeURIComponent('Anfrage: ' + (labels.join(', ') || 'SELLITA'))}&body=${encodeURIComponent(text)}`
   const wa = `${FIRMA.wa}?text=${encodeURIComponent(text)}`
   const canNext = step === 0 ? sel.length > 0 : step === 1 ? ort.trim().length > 2 : c.name.trim() && (c.tel.trim() || c.mail.trim())
@@ -79,6 +80,16 @@ export function LeadConfigurator() {
                     <input className={inp} placeholder="E-Mail" type="email" value={c.mail} onChange={(e) => setC({ ...c, mail: e.target.value })} autoComplete="email" />
                   </div>
                   <textarea className={inp} rows={2} placeholder="Kurze Beschreibung (optional)" value={c.msg} onChange={(e) => setC({ ...c, msg: e.target.value })} />
+                  <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-white/25 bg-white/5 px-3 py-2.5 text-sm text-white/75 hover:bg-white/10">
+                    {photo ? <img src={photo.url} alt="" className="h-10 w-10 rounded-lg object-cover" /> : <Camera size={18} className="text-sky-300" />}
+                    <span className="min-w-0 flex-1 truncate">{photo ? photo.name : 'Schadensfoto hinzufügen (optional)'}</span>
+                    <input type="file" accept="image/*" className="sr-only" onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (photo) URL.revokeObjectURL(photo.url)
+                      setPhoto(f ? { name: f.name, url: URL.createObjectURL(f) } : null)
+                    }} />
+                  </label>
+                  {photo && <p className="text-[11px] text-white/50">Hinweis: Das Foto bitte direkt an die E-Mail bzw. WhatsApp-Nachricht anhängen – es wird nicht automatisch hochgeladen.</p>}
                 </div>
                 <div className="mt-3 grid gap-2">
                   <a href={mailto} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5722] to-[#ef4444] px-4 py-3 text-sm font-bold shadow-lg shadow-red-900/40"><Mail size={16} /> Per E-Mail senden</a>

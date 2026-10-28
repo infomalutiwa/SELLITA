@@ -17,7 +17,7 @@ function Card({ k, side = 'left', children }: { k: string; side?: 'left' | 'righ
       animate={{ opacity: 1, x: 0, filter: 'blur(0px)' }}
       exit={{ opacity: 0, x: side === 'left' ? -30 : 30, filter: 'blur(6px)' }}
       transition={{ duration: 0.5, ease: 'easeOut' }}
-      className={`glass pointer-events-auto absolute bottom-20 z-20 w-[min(92vw,380px)] rounded-2xl p-5 md:bottom-auto md:top-1/2 md:-translate-y-1/2 ${side === 'left' ? 'left-4 md:left-10' : 'right-4 md:right-20'}`}
+      className={`glass pointer-events-auto absolute bottom-28 z-20 w-[min(92vw,380px)] rounded-2xl p-5 md:bottom-auto md:top-1/2 md:-translate-y-1/2 ${side === 'left' ? 'left-4 md:left-10' : 'right-4 md:right-20'}`}
     >
       {children}
     </motion.div>
@@ -29,7 +29,7 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
     <div className="pointer-events-none fixed inset-0 z-20">
       <AnimatePresence mode="wait">
         {scene === 0 && (
-          <motion.div key="hero" className="absolute inset-x-0 bottom-24 px-5 md:bottom-auto md:left-10 md:top-1/2 md:-translate-y-1/2" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.6 }}>
+          <motion.div key="hero" className="absolute inset-x-0 bottom-32 px-5 md:bottom-auto md:left-10 md:top-1/2 md:-translate-y-1/2" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.6 }}>
             <Logo big />
             <p className="mt-5 max-w-md text-xl font-light md:text-2xl">Bad. Wände. <span className="grad-text font-semibold">Wohnraum.</span> Perfekt saniert.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -94,7 +94,7 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
           </Card>
         )}
         {scene === 5 && (
-          <motion.div key="lead" className="absolute inset-x-0 bottom-16 flex flex-col gap-3 px-4 md:inset-x-auto md:bottom-auto md:left-10 md:top-1/2 md:w-[400px] md:-translate-y-1/2" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.5 }}>
+          <motion.div key="lead" className="absolute inset-x-0 bottom-24 flex flex-col gap-3 px-4 md:inset-x-auto md:bottom-auto md:left-10 md:top-1/2 md:w-[400px] md:-translate-y-1/2" initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.5 }}>
             <div className="hidden md:block">
               <div className="text-[11px] font-bold uppercase tracking-[0.25em] text-orange-400">05 · Einsatzgebiet</div>
               <h2 className="text-3xl font-black leading-tight">100 km um Gärtringen – <span className="grad-text">bis Karlsruhe.</span></h2>

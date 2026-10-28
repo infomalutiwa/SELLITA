@@ -57,7 +57,7 @@ const SIDE_HOLES: Hole[] = [[0.0, 0.9, 1.0, 1.2], [0.0, 3.3, 1.0, 1.2]]
 
 export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   const group = useRef<Group>(null)
-  const plaster = usePbr('white_plaster_02', [0.5, 0.5])
+  const plaster = usePbr('white_plaster_02', [1.6, 1.6])
   const roofP = usePbr('grey_roof_tiles_02', [3.5, 1.4])
   const woodP = usePbr('oak_wood_planks', [1.8, 1.9])
   const concreteP = usePbr('concrete_floor_01', [1.5, 1])
@@ -68,7 +68,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
     const wood = new MeshStandardMaterial({ ...woodP, color: '#ffffff', transparent: true })
     const frame = new MeshStandardMaterial({ color: '#f1f1ef', roughness: 0.38, metalness: 0.0, transparent: true })
     // Innenraum-Leuchtfläche hinter der Scheibe (warmes Abendlicht)
-    const glow = new MeshStandardMaterial({ color: '#ffe2b8', emissive: new Color('#ffb25a'), emissiveIntensity: 1.2, transparent: true, toneMapped: false })
+    const glow = new MeshStandardMaterial({ color: '#ffe2b8', emissive: new Color('#ffb25a'), emissiveIntensity: 1.2, transparent: true })
     const glass = new MeshPhysicalMaterial({ color: '#b9cde0', metalness: 0, roughness: 0.02, transparent: true, opacity: 0.22, envMapIntensity: 2.4, clearcoat: 1 })
     const door = new MeshStandardMaterial({ color: '#2b3340', roughness: 0.35, metalness: 0.1, transparent: true })
     const edge = new LineBasicMaterial({ color: '#38bdf8', transparent: true, opacity: 0, toneMapped: false })
@@ -87,16 +87,17 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   useFrame((_, dt) => {
     S.ren += (S.renTarget - S.ren) * Math.min(1, dt * 4)
     const x = xrayValue()
-    m.wall.opacity = 1 - 0.9 * x
+    m.wall.opacity = 1 - 0.96 * x
+    m.wall.envMapIntensity = m.slab.envMapIntensity = m.roof.envMapIntensity = 1 - 0.85 * x
     m.wall.depthWrite = x < 0.4
     m.wall.color.copy(old).lerp(fresh, S.ren)
     m.slab.opacity = 1 - 0.5 * x
     m.slab.depthWrite = x < 0.3
-    m.roof.opacity = 1 - 0.88 * x
+    m.roof.opacity = 1 - 0.94 * x
     m.roof.depthWrite = x < 0.3
     m.glass.opacity = 0.24 - 0.18 * x
     m.glow.opacity = 0.95 - 0.8 * x
-    m.glow.emissiveIntensity = (0.4 + 1.0 * S.ren) * (1 - 0.85 * x)
+    m.glow.emissiveIntensity = (0.2 + 0.5 * S.ren) * (1 - 0.85 * x)
     m.door.opacity = 1 - 0.8 * x
     m.wood.opacity = 1 - 0.35 * x
     m.frame.opacity = 1 - 0.7 * x
