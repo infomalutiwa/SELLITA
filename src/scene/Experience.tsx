@@ -17,7 +17,7 @@ function Lights() {
       <directionalLight position={[-9, 7, 10]} intensity={2.4} color="#ffc99a" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.03} />
       <directionalLight position={[10, 4, -6]} intensity={0.5} color="#7aa7ff" />
       {/* Fotografische HDRI (Poly Haven, CC0): Licht, Reflexionen und Hintergrund */}
-      <Environment files="/ph/hdr/qwantani_dusk_2_puresky_1k.hdr" background backgroundBlurriness={0.02} environmentIntensity={1.5} />
+      <Environment files="/ph/hdr/qwantani_dusk_2_puresky.hdr" background backgroundBlurriness={0.02} environmentIntensity={1.5} />
     </>
   )
 }
