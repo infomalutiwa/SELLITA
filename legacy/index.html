@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sellita – Heizung &amp; Sanitär in Gärtringen</title>
+<meta name="description" content="Sellita Heizung & Sanitär in Gärtringen: Heizung, Sanitär, Leckortung, Badsanierung, Balkonsanierung und Wohnungsrenovierung.">
+<style>
+  :root {
+    --red: #d4202a;
+    --red-dark: #a8151e;
+    --blue: #1f86d6;
+    --navy: #1c2430;
+    --white: #ffffff;
+    --bg: #f6f8fb;
+    --text: #1c2430;
+    --muted: #5b6676;
+    --radius: 14px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--text); background: var(--white); line-height: 1.6; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 20px; }
+
+  header { position: sticky; top: 0; z-index: 10; background: var(--white); border-bottom: 3px solid var(--red); }
+  .nav { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+  .logo { font-weight: 900; font-size: 1.5rem; letter-spacing: .08em; color: var(--navy); }
+  .logo small { display: block; font-size: .6rem; letter-spacing: .2em; font-weight: 700; color: var(--red); margin-top: -4px; }
+  .logo small span { color: var(--blue); }
+  nav a { margin-left: 22px; font-weight: 600; font-size: .95rem; color: var(--muted); }
+  nav a:hover { color: var(--red); }
+  @media (max-width: 640px) { nav a:not(.cta) { display: none; } }
+
+  .btn { display: inline-block; padding: 13px 26px; border-radius: 999px; font-weight: 700; transition: transform .15s, background .15s; }
+  .btn:hover { transform: translateY(-2px); }
+  .btn-red { background: var(--red); color: var(--white); }
+  .btn-red:hover { background: var(--red-dark); }
+  .btn-outline { border: 2px solid var(--white); color: var(--white); }
+  nav .cta { background: var(--red); color: var(--white); padding: 8px 18px; border-radius: 999px; }
+  nav .cta:hover { background: var(--red-dark); color: var(--white); }
+
+  .hero { background: linear-gradient(115deg, var(--red) 0%, var(--red) 55%, var(--red-dark) 100%); color: var(--white); position: relative; overflow: hidden; }
+  .hero::after { content: ""; position: absolute; right: -80px; top: 0; bottom: 0; width: 38%; background: var(--blue); clip-path: polygon(35% 0, 100% 0, 100% 100%, 0 100%); opacity: .9; }
+  .hero .wrap { position: relative; z-index: 1; padding-top: 90px; padding-bottom: 90px; }
+  .hero h1 { font-size: clamp(2.4rem, 7vw, 4.2rem); font-weight: 900; letter-spacing: .06em; line-height: 1.05; }
+  .hero h2 { font-size: clamp(1rem, 2.5vw, 1.3rem); letter-spacing: .25em; font-weight: 700; margin: 8px 0 22px; }
+  .hero p { max-width: 520px; font-size: 1.1rem; margin-bottom: 30px; opacity: .95; }
+  .hero .btns { display: flex; gap: 14px; flex-wrap: wrap; }
+  .hero .btn-red { background: var(--white); color: var(--red); }
+  .hero .btn-red:hover { background: var(--bg); }
+
+  section { padding: 72px 0; }
+  section.alt { background: var(--bg); }
+  .title { text-align: center; margin-bottom: 44px; }
+  .title h2 { font-size: 2rem; font-weight: 800; }
+  .title h2::after { content: ""; display: block; width: 70px; height: 4px; margin: 12px auto 0; background: linear-gradient(90deg, var(--red) 70%, var(--blue) 70%); border-radius: 2px; }
+  .title p { color: var(--muted); margin-top: 10px; }
+
+  .grid { display: grid; gap: 24px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+  .card { background: var(--white); border-radius: var(--radius); padding: 30px 26px; box-shadow: 0 4px 18px rgba(28,36,48,.08); border-top: 5px solid var(--red); }
+  .card.blue { border-top-color: var(--blue); }
+  .card .icon { font-size: 2.2rem; margin-bottom: 10px; }
+  .card h3 { font-size: 1.3rem; margin-bottom: 6px; letter-spacing: .04em; }
+  .card .sub { color: var(--red); font-weight: 700; font-size: .85rem; margin-bottom: 10px; }
+  .card.blue .sub { color: var(--blue); }
+  .card p { color: var(--muted); font-size: .97rem; }
+
+  .list { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .list div { background: var(--white); border-left: 5px solid var(--blue); padding: 18px 20px; border-radius: 10px; font-weight: 600; box-shadow: 0 2px 10px rgba(28,36,48,.06); }
+  .list div:nth-child(odd) { border-left-color: var(--red); }
+
+  .contact { background: var(--navy); color: var(--white); }
+  .contact .title p { color: #b8c2d1; }
+  .contact-grid { display: grid; gap: 20px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .contact-item { background: rgba(255,255,255,.07); border-radius: var(--radius); padding: 26px; text-align: center; border-bottom: 4px solid var(--red); }
+  .contact-item:nth-child(2) { border-bottom-color: var(--blue); }
+  .contact-item .icon { font-size: 1.8rem; }
+  .contact-item h3 { margin: 6px 0; font-size: 1rem; color: #b8c2d1; font-weight: 600; }
+  .contact-item a, .contact-item span { font-size: 1.15rem; font-weight: 700; word-break: break-word; }
+  .contact-item a:hover { color: var(--blue); }
+
+  footer { background: #11161e; color: #8b96a8; text-align: center; padding: 22px 0; font-size: .9rem; }
+  footer strong { color: var(--white); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a href="#top" class="logo">SELLITA<small>HEIZUNG <span>&amp; SANITÄR</span></small></a>
+    <nav>
+      <a href="#leistungen">Leistungen</a>
+      <a href="#renovierung">Renovierung</a>
+      <a href="#kontakt" class="cta">Anfragen</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+  <div class="hero">
+    <div class="wrap">
+      <h1>SELLITA</h1>
+      <h2>HEIZUNG &amp; SANITÄR</h2>
+      <p>Planung, Montage und Wartung – schnell, präzise und zuverlässig. Ihr Partner für Heizung, Sanitär und Leckortung aus Gärtringen.</p>
+      <div class="btns">
+        <a class="btn btn-red" href="#kontakt">Jetzt anfragen</a>
+        <a class="btn btn-outline" href="tel:+4917830014260">0178 30 14 260</a>
+      </div>
+    </div>
+  </div>
+
+  <section id="leistungen">
+    <div class="wrap">
+      <div class="title"><h2>Unsere Leistungen</h2><p>Alles rund um Wärme und Wasser in Ihrem Zuhause.</p></div>
+      <div class="grid">
+        <div class="card">
+          <div class="icon">🔥</div>
+          <h3>HEIZUNG</h3>
+          <div class="sub">Planung · Montage · Wartung</div>
+          <p>Von der Planung über den fachgerechten Einbau bis zur regelmäßigen Wartung Ihrer Heizungsanlage.</p>
+        </div>
+        <div class="card blue">
+          <div class="icon">💧</div>
+          <h3>SANITÄR</h3>
+          <div class="sub">Neubau · Umbau · Reparatur</div>
+          <p>Sanitärinstallationen für Neubau und Bestand – sauber ausgeführt und zuverlässig repariert.</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔍</div>
+          <h3>LECKORTUNG</h3>
+          <div class="sub">Schnell · Präzise · Zuverlässig</div>
+          <p>Wasserschäden schnell erkennen: Wir orten Leckagen genau, damit nur dort geöffnet wird, wo es nötig ist.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="renovierung" class="alt">
+    <div class="wrap">
+      <div class="title"><h2>Sanierung &amp; Renovierung</h2><p>Mehr als nur Heizung und Sanitär.</p></div>
+      <div class="list">
+        <div>Badsanierung</div>
+        <div>Balkonsanierung</div>
+        <div>Wohnungsrenovierung</div>
+        <div>Möbel demontieren</div>
+        <div>Elektrik / Montage</div>
+      </div>
+    </div>
+  </section>
+
+  <section id="kontakt" class="contact">
+    <div class="wrap">
+      <div class="title"><h2>Kontakt &amp; Anfragen</h2><p>Schreiben oder rufen Sie uns an – wir melden uns schnell bei Ihnen.</p></div>
+      <div class="contact-grid">
+        <div class="contact-item">
+          <div class="icon">📍</div>
+          <h3>Adresse</h3>
+          <span>Rohrweg 20<br>71116 Gärtringen</span>
+        </div>
+        <div class="contact-item">
+          <div class="icon">📞</div>
+          <h3>Telefon</h3>
+          <a href="tel:+4917830014260">0178 30 14 260</a>
+        </div>
+        <div class="contact-item">
+          <div class="icon">✉️</div>
+          <h3>E-Mail</h3>
+          <a href="mailto:selita.service@web.de">selita.service@web.de</a>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">© <span id="y"></span> <strong>Sellita</strong> Heizung &amp; Sanitär · Rohrweg 20 · 71116 Gärtringen</div>
+</footer>
+<script>document.getElementById('y').textContent = new Date().getFullYear();</script>
+</body>
+</html>

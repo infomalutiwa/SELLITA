@@ -1,0 +1,28 @@
+@import 'tailwindcss';
+
+:root {
+  --anthrazit: #0f141c;
+  --anthrazit-2: #1e242b;
+  --heat: #ef4444;
+  --heat-2: #ff5722;
+  --water: #0ea5e9;
+  --water-2: #38bdf8;
+  --paper: #f8fafc;
+}
+
+html, body, #root { margin: 0; background: var(--anthrazit); color: var(--paper); }
+body { font-family: Inter, system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+::selection { background: var(--water); color: #fff; }
+
+.glass {
+  background: linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.03));
+  border: 1px solid rgba(255,255,255,.14);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  box-shadow: 0 10px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.12);
+}
+.grad-text { background: linear-gradient(90deg, var(--heat-2), var(--heat) 40%, var(--water) 60%, var(--water-2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.chip { display: inline-flex; align-items: center; gap: .4rem; padding: .3rem .7rem; border-radius: 999px; font-size: .75rem; font-weight: 600; letter-spacing: .04em; border: 1px solid rgba(255,255,255,.16); background: rgba(255,255,255,.06); }
+.lbl3d { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #e2e8f0; background: rgba(15,20,28,.72); border: 1px solid rgba(56,189,248,.5); padding: 2px 7px; border-radius: 6px; white-space: nowrap; pointer-events: none; }
+@media (prefers-reduced-motion: reduce) { * { animation-duration: .01ms !important; } }
+.glass-solid { background: linear-gradient(135deg, rgba(20,27,37,.92), rgba(15,20,28,.86)); }
