@@ -37,6 +37,7 @@ export default function App() {
   const [legal, setLegal] = useState<LegalKind>(null)
   const [playing, setPlaying] = useState(false)
   const lenis = useRef<Lenis | null>(null)
+  const autoRef = useRef<(() => void) | null>(null)
 
   useEffect(() => {
     const l = new Lenis({ duration: 1.25, smoothWheel: true })
@@ -75,6 +76,7 @@ export default function App() {
     setPlaying(true)
     lenis.current?.scrollTo(max, { duration: Math.max(2, (1 - Math.min(S.target, 0.985)) * 65), easing: (t) => t, onComplete: () => setPlaying(false) })
   }, [playing, stop])
+  autoRef.current = play
   const seek = useCallback((p: number, live: boolean) => {
     const max = document.documentElement.scrollHeight - window.innerHeight
     setPlaying(false)
@@ -91,7 +93,8 @@ export default function App() {
   return (
     <>
       <GLBoundary><Experience /></GLBoundary>
-      <Loader />
+      <Loader onDone={() => setTimeout(() => { if (window.scrollY < 10 && !matchMedia('(prefers-reduced-motion: reduce)').matches) autoRef.current?.() }, 2500)} />
+      {!free && <Letterbox />}
       <div id="scroll" style={{ height: '800vh' }} aria-hidden />
 
       <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between p-4 md:px-8">
@@ -136,10 +139,16 @@ function ProgressBar() {
   return <div className="fixed inset-x-0 top-0 z-40 h-[3px] bg-white/5"><div ref={ref} className="h-full origin-left bg-gradient-to-r from-[#ff5722] via-[#ef4444] to-[#38bdf8]" style={{ transform: 'scaleX(0)' }} /></div>
 }
 
-function Loader() {
+function Letterbox() {
+  const bar = 'fixed inset-x-0 z-[15] bg-[#07090e] pointer-events-none transition-[height] duration-1000'
+  const h = 'max(0px, calc((100vh - 100vw / 2.39) / 2))'
+  return (<><div className={bar + ' top-0'} style={{ height: h }} /><div className={bar + ' bottom-0'} style={{ height: h }} /></>)
+}
+
+function Loader({ onDone }: { onDone: () => void }) {
   const { progress, active } = useProgress()
   const [done, setDone] = useState(false)
-  useEffect(() => { if (!active && progress >= 100) { const t = setTimeout(() => setDone(true), 500); return () => clearTimeout(t) } }, [active, progress])
+  useEffect(() => { if (!active && progress >= 100) { const t = setTimeout(() => { setDone(true); onDone() }, 500); return () => clearTimeout(t) } }, [active, progress])
   return (
     <AnimatePresence>
       {!done && (

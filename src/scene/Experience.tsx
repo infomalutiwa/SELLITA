@@ -1,8 +1,9 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Sparkles } from '@react-three/drei'
-import { Bloom, EffectComposer, N8AO, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
-import { ToneMappingMode } from 'postprocessing'
+import { Bloom, EffectComposer, N8AO, ChromaticAberration, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
+import { BlendFunction, ToneMappingMode } from 'postprocessing'
+import { Vector2 } from 'three'
 import { PCFSoftShadowMap, type Group } from 'three'
 import { useRef } from 'react'
 import { S, smooth } from '../state'
@@ -71,7 +72,8 @@ export function Experience() {
         {!S.mobile && <N8AO aoRadius={0.7} distanceFalloff={1.2} intensity={2.2} quality="medium" color="#0b1018" />}
         <Bloom intensity={S.mobile ? 0.35 : 0.5} luminanceThreshold={1.0} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
         <ToneMapping mode={ToneMappingMode.AGX} />
-        <Noise opacity={0.035} premultiply />
+        <ChromaticAberration offset={new Vector2(0.0006, 0.0006)} radialModulation modulationOffset={0.3} blendFunction={BlendFunction.NORMAL} />
+        <Noise opacity={0.05} premultiply />
         <Vignette eskil={false} offset={0.2} darkness={0.7} />
       </EffectComposer>
     </Canvas>

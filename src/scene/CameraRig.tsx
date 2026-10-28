@@ -52,7 +52,7 @@ export function CameraRig() {
   }, [])
 
   useFrame((_, dt) => {
-    S.p += (S.target - S.p) * Math.min(1, dt * 7)
+    S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
     if (S.free) {
       if (!wasFree.current && controls.current) { controls.current.target.copy(look.current); controls.current.update() }
       wasFree.current = true
@@ -71,6 +71,9 @@ export function CameraRig() {
     const hero = 1 - smooth(0.0, 0.12, S.p)
     pos.x += S.mouse.x * 1.4 * hero
     pos.y += -S.mouse.y * 0.7 * hero
+    // leichte Handkamera-Bewegung wie bei einem gedrehten Film
+    const tt = performance.now() / 1000
+    pos.x += Math.sin(tt * 0.7) * 0.035; pos.y += Math.sin(tt * 0.93 + 1.3) * 0.025; pos.z += Math.sin(tt * 0.51 + 0.4) * 0.03
     cur.copy(pos)
     camera.position.lerp(cur, Math.min(1, dt * 12))
     look.current.lerp(tgt, Math.min(1, dt * 12))
