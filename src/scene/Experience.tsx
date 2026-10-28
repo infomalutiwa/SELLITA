@@ -1,11 +1,11 @@
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Lightformer, Sparkles } from '@react-three/drei'
-import { Bloom, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing'
+import { Environment, Lightformer, Sparkles, Stars } from '@react-three/drei'
+import { Bloom, EffectComposer, N8AO, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { ToneMappingMode } from 'postprocessing'
-import { ACESFilmicToneMapping, Color, PCFSoftShadowMap, type Group } from 'three'
+import { ACESFilmicToneMapping, BackSide, Color, PCFSoftShadowMap, ShaderMaterial, type Group, type Mesh } from 'three'
 import { useRef } from 'react'
-import { S } from '../state'
+import { S, smooth } from '../state'
 import { HouseScene } from './HouseScene'
 import { CameraRig } from './CameraRig'
 import { ServiceRadiusMap, MAP_Y } from './ServiceRadiusMap'
@@ -40,9 +40,26 @@ function Stage() {
       <group ref={mapRef}><ServiceRadiusMap /></group>
       <Sparkles count={S.mobile ? 50 : 140} scale={[16, 9, 16]} position={[0, 3.5, 0]} size={2.2} speed={0.25} opacity={0.5} color="#7fb8e8" />
       <Sparkles count={S.mobile ? 20 : 60} scale={[12, 6, 12]} position={[0, MAP_Y + 3, 0]} size={2} speed={0.2} opacity={0.5} color="#ff8a5a" />
+      <Stars radius={90} depth={50} count={S.mobile ? 800 : 2500} factor={4} saturation={0.3} fade speed={0.6} />
+      <SkyDome />
       <SceneFog />
     </>
   )
+}
+
+function SkyDome() {
+  const ref = useRef<Mesh>(null)
+  const mat = useMemo(() => new ShaderMaterial({
+    side: BackSide, depthWrite: false, fog: false,
+    uniforms: { uWarm: { value: 0 } },
+    vertexShader: 'varying vec3 vP; void main(){ vP = normalize(position); gl_Position = projectionMatrix*modelViewMatrix*vec4(position,1.0); }',
+    fragmentShader: 'uniform float uWarm; varying vec3 vP; void main(){ float h = clamp(vP.y*0.5+0.5,0.0,1.0); vec3 low = mix(vec3(0.06,0.08,0.11), vec3(0.28,0.14,0.12), uWarm); vec3 top = vec3(0.02,0.035,0.07); vec3 c = mix(low, top, pow(h,0.55)); c += vec3(0.05,0.12,0.22)*pow(1.0-abs(vP.y),6.0)*0.7; gl_FragColor = vec4(c,1.0); #include <colorspace_fragment>\n }',
+  }), [])
+  useFrame(({ camera }) => {
+    if (ref.current) ref.current.position.copy(camera.position)
+    mat.uniforms.uWarm.value = 1 - smooth(0.0, 0.2, S.p)
+  })
+  return <mesh ref={ref} material={mat} renderOrder={-10}><sphereGeometry args={[120, 32, 16]} /></mesh>
 }
 
 function SceneFog() {
@@ -72,6 +89,7 @@ export function Experience() {
         <CameraRig />
       </Suspense>
       <EffectComposer multisampling={S.mobile ? 0 : 4}>
+        {!S.mobile && <N8AO aoRadius={0.7} distanceFalloff={1.2} intensity={2.2} quality="medium" color="#0b1018" />}
         <Bloom intensity={S.mobile ? 0.7 : 0.95} luminanceThreshold={0.75} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
         <ToneMapping mode={ToneMappingMode.AGX} />
         <Vignette eskil={false} offset={0.2} darkness={0.7} />

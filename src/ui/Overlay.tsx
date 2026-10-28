@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
-import { Flame, Droplets, ScanSearch, Bath, Hammer, Building2, PaintRoller, Zap, ChevronsDown, Phone, MapPin } from 'lucide-react'
+import { Droplets, ScanSearch, Bath, Hammer, Building2, PaintRoller, Zap, ChevronsDown, Phone, MapPin } from 'lucide-react'
 import { FIRMA } from '../data'
 import { Logo } from './Logo'
 import { LeadConfigurator } from './LeadConfigurator'
@@ -31,7 +31,7 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
         {scene === 0 && (
           <motion.div key="hero" className="absolute inset-x-0 bottom-24 px-5 md:bottom-auto md:left-10 md:top-1/2 md:-translate-y-1/2" initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -30 }} transition={{ duration: 0.6 }}>
             <Logo big />
-            <p className="mt-5 max-w-md text-xl font-light md:text-2xl">Wärme. Wasser. <span className="grad-text font-semibold">Wohnraum.</span> Perfekt inszeniert.</p>
+            <p className="mt-5 max-w-md text-xl font-light md:text-2xl">Bad. Wände. <span className="grad-text font-semibold">Wohnraum.</span> Perfekt saniert.</p>
             <div className="mt-6 flex flex-wrap items-center gap-3">
               <a href={FIRMA.tel} className="pointer-events-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5722] to-[#ef4444] px-5 py-3 text-sm font-bold shadow-lg shadow-red-900/40"><Phone size={16} /> {FIRMA.phone}</a>
               <span className="chip"><MapPin size={12} /> Gärtringen · bis 100 km</span>
@@ -40,15 +40,15 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
           </motion.div>
         )}
         {scene === 1 && (
-          <Card k="heat" side="left">
-            <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.25em] text-red-400">01 · Heizung</div>
-            <h2 className="text-3xl font-black leading-tight">Wärme, die <span className="text-[#ff5722]">fließt.</span></h2>
-            <p className="mt-2 text-lg font-semibold">Planung • Montage • Wartung</p>
-            <p className="mt-1 text-sm text-white/65">Service, Optimierung &amp; Modernisierung bestehender Systeme.</p>
+          <Card k="wand" side="left">
+            <div className="mb-1 text-[11px] font-bold uppercase tracking-[0.25em] text-red-400">01 · Blick in die Wand</div>
+            <h2 className="text-3xl font-black leading-tight">Wir schauen <span className="text-[#ff5722]">hinein.</span></h2>
+            <p className="mt-2 text-lg font-semibold">Öffnen • Prüfen • Dokumentieren</p>
+            <p className="mt-1 text-sm text-white/65">Leitungen, Dämmung und Feuchtigkeit im Mauerwerk – sichtbar, bevor saniert wird.</p>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Badge tone="red" icon={<Flame size={12} />}>Heizkreis</Badge>
-              <Badge tone="red" icon={<Flame size={12} />}>Fußbodenheizung</Badge>
-              <Badge tone="red" icon={<Zap size={12} />}>Wärmepumpe</Badge>
+              <Badge tone="red" icon={<ScanSearch size={12} />}>Wandöffnung</Badge>
+              <Badge tone="blue" icon={<Droplets size={12} />}>Wasserleitungen</Badge>
+              <Badge tone="yellow" icon={<Zap size={12} />}>Elektrik</Badge>
             </div>
           </Card>
         )}
@@ -59,11 +59,11 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
             <p className="mt-2 text-lg font-semibold">Neubau • Umbau • Reparatur</p>
             <ul className="mt-3 space-y-1 text-sm text-white/75">
               <li>✓ Badsanierung komplett aus einer Hand</li>
-              <li>✓ Möbel demontieren &amp; fachgerechter Rückbau</li>
+              <li>✓ Möbel montieren, demontieren &amp; fachgerechter Rückbau</li>
             </ul>
             <div className="mt-4 flex flex-wrap gap-2">
               <Badge tone="blue" icon={<Bath size={12} />}>Badsanierung</Badge>
-              <Badge tone="blue" icon={<Hammer size={12} />}>Rückbau</Badge>
+              <Badge tone="blue" icon={<Hammer size={12} />}>Möbelmontage</Badge>
               <Badge tone="blue" icon={<Droplets size={12} />}>Sanitär</Badge>
             </div>
           </Card>
@@ -83,6 +83,7 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
             <h2 className="text-3xl font-black leading-tight">Alles <span className="text-yellow-300">saniert.</span></h2>
             <div className="mt-3 flex flex-wrap gap-2">
               <Badge tone="yellow" icon={<PaintRoller size={12} />}>Wohnungsrenovierung</Badge>
+              <Badge tone="yellow" icon={<Hammer size={12} />}>Möbel auf-/abbauen</Badge>
               <Badge tone="yellow" icon={<Building2 size={12} />}>Balkonsanierung</Badge>
               <Badge tone="yellow" icon={<Zap size={12} />}>Elektrik / Montage</Badge>
             </div>

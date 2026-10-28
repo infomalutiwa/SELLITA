@@ -59,12 +59,6 @@ export function Exterior() {
         return <mesh key={i} position={[Math.cos(a) * 5.35, 0.3, Math.sin(a) * 5.35]} rotation={[0, -a + Math.PI / 2, 0]}><boxGeometry args={[0.07, 0.6, 0.04]} /><meshStandardMaterial color="#e2e8f0" roughness={0.6} /></mesh>
       })}
       </group>
-      {/* Außeneinheit Wärmepumpe */}
-      <group position={[-3.75, 0, -1.2]}>
-        <mesh position={[0, 0.45, 0]} castShadow><boxGeometry args={[0.7, 0.9, 0.45]} /><meshStandardMaterial color="#e5e9ee" roughness={0.35} metalness={0.4} /></mesh>
-        <mesh position={[0.4, 0.45, 0]} rotation={[0, Math.PI / 2, 0]}><circleGeometry args={[0.2, 32]} /><meshStandardMaterial color="#1e242b" /></mesh>
-        <mesh position={[0.351, 0.45, 0]} rotation={[0, Math.PI / 2, 0]}><ringGeometry args={[0.2, 0.22, 32]} /><meshBasicMaterial color="#38bdf8" toneMapped={false} /></mesh>
-      </group>
       {/* Schornstein (Abgas) */}
       <mesh position={[-1.6, 6.9, -0.9]} castShadow><boxGeometry args={[0.45, 1.3, 0.45]} /><meshStandardMaterial color="#8a6f62" roughness={0.9} /></mesh>
       <mesh position={[-1.6, 7.58, -0.9]}><boxGeometry args={[0.58, 0.08, 0.58]} /><meshStandardMaterial color="#2a3139" metalness={0.5} roughness={0.4} /></mesh>

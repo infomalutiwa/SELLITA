@@ -1,4 +1,5 @@
 import { useMemo, useRef } from 'react'
+import { MeshReflectorMaterial, Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import {
   Color, DoubleSide, EdgesGeometry, ExtrudeGeometry, LineBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Path, Shape,
@@ -8,6 +9,7 @@ import { S, bump, smooth } from '../state'
 import { FlowPipe } from './FlowPipe'
 import { PipeNetwork } from './PipeNetwork'
 import { Technik } from './Technik'
+import { AssemblyShelf, Kitchen, WallOpening } from './Renovation'
 import { BathroomCutaway } from './BathroomCutaway'
 import { LeakScanner } from './LeakScanner'
 import { ExternalModelLoader } from './ExternalModelLoader'
@@ -118,6 +120,13 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
         <meshBasicMaterial color="#2bb7ff" toneMapped={false} />
       </mesh>
 
+      {!S.mobile && (
+        <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+          <circleGeometry args={[16, 64]} />
+          <MeshReflectorMaterial resolution={512} mirror={0.55} mixBlur={8} mixStrength={5} blur={[300, 80]} color="#0c1118" roughness={1} depthScale={0.6} minDepthThreshold={0.4} maxDepthThreshold={1.2} />
+        </mesh>
+      )}
+      <Sparkles count={S.mobile ? 8 : 24} scale={[1.2, 1.4, 1.8]} position={[1.5, 3.5, 0.3]} size={6} speed={0.35} opacity={0.35} color="#d8f1ff" />
       {/* Walls */}
       <Wall w={6.4} h={5.2} holes={FRONT_HOLES} pos={[0, 0, 2]} mat={m.wall} edge={m.edge} />
       <Wall w={6.4} h={5.2} holes={BACK_HOLES} pos={[0, 0, -2]} mat={m.wall} edge={m.edge} />
@@ -165,6 +174,9 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       <Balcony />
       <Interior />
       <Technik />
+      <WallOpening />
+      <Kitchen />
+      <AssemblyShelf />
       <PipeNetwork />
       <BathroomCutaway />
       <LeakScanner />
@@ -185,7 +197,7 @@ function HeatLights() {
   })
   return (
     <>
-      <pointLight ref={a} position={[-0.4, 1.7, 0.4]} color="#ff6a3a" distance={8} />
+      <pointLight ref={a} position={[-0.4, 1.7, 0.4]} color="#ffd9a8" distance={8} />
       <pointLight ref={b} position={[1.9, 4.2, 0.2]} color="#7fd4ff" distance={7} />
     </>
   )
@@ -234,11 +246,14 @@ function Interior() {
       <ExternalModelLoader file="tableCoffee.glb" length={1.05} position={[-1.7, Y, -0.35]} />
       <ExternalModelLoader file="lampRoundFloor.glb" height={1.75} position={[-3.0, Y, -1.55]}
         fallback={<mesh position={[-3.0, 4.6, -1.5]}><sphereGeometry args={[0.16, 16, 16]} /><meshBasicMaterial color="#fff1c9" toneMapped={false} /></mesh>} />
-      <ExternalModelLoader file="pottedPlant.glb" height={1.15} position={[-0.4, Y, -1.5]} />
-      <ExternalModelLoader file="bookcaseClosed.glb" height={1.75} position={[-3.0, Y, 0.9]} rotation={[0, Math.PI / 2, 0]} tint="#d9c4a8" />
+      <ExternalModelLoader file="pottedPlant.glb" height={1.15} position={[-0.4, Y, 1.4]} />
+      <ExternalModelLoader file="sideTable.glb" height={0.5} position={[-0.45, Y, -1.5]} />
+      <ExternalModelLoader file="lampSquareTable.glb" height={0.42} position={[-0.45, Y + 0.5, -1.5]} />
+      <ExternalModelLoader file="televisionModern.glb" length={1.0} position={[-1.8, Y + 0.55, 1.4]} rotation={[0, Math.PI, 0]} />
+      <ExternalModelLoader file="cabinetTelevision.glb" length={1.5} position={[-1.8, Y, 1.4]} rotation={[0, Math.PI, 0]} />
       {/* Waschmaschine + Trockner im Technikraum */}
-      <ExternalModelLoader file="washer.glb" height={0.88} position={[-0.05, 0.2, -1.5]} />
-      <ExternalModelLoader file="dryer.glb" height={0.88} position={[0.6, 0.2, -1.5]} />
+      <ExternalModelLoader file="washer.glb" height={0.88} position={[-0.4, 0.2, -1.5]} />
+      <ExternalModelLoader file="dryer.glb" height={0.88} position={[0.2, 0.2, -1.5]} />
     </group>
   )
 }

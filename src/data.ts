@@ -12,7 +12,7 @@ export const FIRMA = {
 
 export const SCENES = [
   { id: 'aussen', hud: 'Außenansicht', color: '#F8FAFC' },
-  { id: 'heizung', hud: 'Heizung', color: '#EF4444' },
+  { id: 'wand', hud: 'Blick in die Wand', color: '#EF4444' },
   { id: 'sanitaer', hud: 'Bad & Sanitär', color: '#38BDF8' },
   { id: 'leck', hud: 'Leckortung', color: '#0EA5E9' },
   { id: 'reno', hud: 'Renovierung & Balkon', color: '#FACC15' },
@@ -21,7 +21,6 @@ export const SCENES = [
 
 export const SERVICES = [
   { id: 'sanitaer', label: 'Sanitär', icon: 'Droplets' },
-  { id: 'heizung', label: 'Heizung / Wartung', icon: 'Flame' },
   { id: 'leck', label: 'Leckortung', icon: 'ScanSearch' },
   { id: 'bad', label: 'Badsanierung', icon: 'Bath' },
   { id: 'balkon', label: 'Balkonsanierung', icon: 'Fence' },

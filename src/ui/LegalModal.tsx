@@ -27,7 +27,7 @@ export function LegalModal({ kind, onClose }: { kind: LegalKind; onClose: () => 
                 <p><b>Kontakt</b><br />Telefon: <a className="text-sky-300" href={FIRMA.tel}>{FIRMA.phone}</a><br />E-Mail: <a className="text-sky-300" href={`mailto:${FIRMA.mail}`}>{FIRMA.mail}</a></p>
                 <p><b>Steuerliche Angaben</b><br />{FIRMA.tax}</p>
                 <p><b>Inhaber / Vertretungsberechtigte Person</b><br />[wird nachgereicht]</p>
-                <p><b>Berufsbezeichnung / Kammer</b><br />Handwerk (Installateur- und Heizungsbauer) – [Handwerkskammer: wird nachgereicht]</p>
+                <p><b>Berufsbezeichnung / Kammer</b><br />Handwerk (Sanitär, Leckortung, Renovierung) – [Handwerkskammer / Eintragung: wird nachgereicht]</p>
                 <p className="text-xs text-slate-400">Hinweis: Platzhalter in eckigen Klammern sind vor Veröffentlichung zu ergänzen.</p>
               </div>
             ) : (
