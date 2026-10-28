@@ -1,5 +1,4 @@
 import { useMemo, useRef } from 'react'
-import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import {
   Color, DoubleSide, EdgesGeometry, ExtrudeGeometry, LineBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Path, Shape,
@@ -7,9 +6,10 @@ import {
 } from 'three'
 import { S, bump, smooth } from '../state'
 import { FlowPipe } from './FlowPipe'
+import { LayerLabel } from './LayerLabel'
 import { PipeNetwork } from './PipeNetwork'
 import { Technik } from './Technik'
-import { AssemblyShelf, Kitchen, WallOpening } from './Renovation'
+import { AssemblyShelf, Kitchen, OldWardrobe, WallOpening } from './Renovation'
 import { BathroomCutaway } from './BathroomCutaway'
 import { LeakScanner } from './LeakScanner'
 import { ExternalModelLoader } from './ExternalModelLoader'
@@ -34,7 +34,8 @@ function wallGeometry(w: number, h: number, holes: Hole[], depth = 0.16) {
 
 function xrayValue() {
   if (S.xrayForce) return 1
-  return smooth(0.06, 0.16, S.p) * (1 - smooth(0.87, 0.91, S.p))
+  // auf dem Balkon wird die Fassade wieder fast blickdicht (Außenansicht)
+  return smooth(0.06, 0.16, S.p) * (1 - smooth(0.87, 0.91, S.p)) * (1 - 0.8 * bump(0.7, 0.74, 0.84, 0.87, S.p))
 }
 
 function Wall({ w, h, holes, pos, rotY = 0, mat, edge }: { w: number; h: number; holes: Hole[]; pos: [number, number, number]; rotY?: number; mat: Material; edge: Material }) {
@@ -68,11 +69,11 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
     const wood = new MeshStandardMaterial({ ...woodP, color: '#ffffff', transparent: true })
     const frame = new MeshStandardMaterial({ color: '#f1f1ef', roughness: 0.38, metalness: 0.0, transparent: true })
     // Innenraum-Leuchtfläche hinter der Scheibe (warmes Abendlicht)
-    const glow = new MeshStandardMaterial({ color: '#ffe2b8', emissive: new Color('#ffb25a'), emissiveIntensity: 1.2, transparent: true })
-    const glass = new MeshPhysicalMaterial({ color: '#b9cde0', metalness: 0, roughness: 0.02, transparent: true, opacity: 0.22, envMapIntensity: 2.4, clearcoat: 1 })
+    const glow = new MeshStandardMaterial({ color: '#ffe2b8', emissive: new Color('#ffb25a'), emissiveIntensity: 1.2, transparent: true, depthWrite: false })
+    const glass = new MeshPhysicalMaterial({ color: '#b9cde0', metalness: 0, roughness: 0.02, transparent: true, opacity: 0.22, envMapIntensity: 2.4, clearcoat: 1, depthWrite: false })
     const door = new MeshStandardMaterial({ color: '#2b3340', roughness: 0.35, metalness: 0.1, transparent: true })
     const edge = new LineBasicMaterial({ color: '#38bdf8', transparent: true, opacity: 0, toneMapped: false })
-    const edgeRoof = new LineBasicMaterial({ color: '#ff7a5a', transparent: true, opacity: 0, toneMapped: false })
+    const edgeRoof = new LineBasicMaterial({ color: '#ffffff', transparent: true, opacity: 0, toneMapped: false })
     return { wall, slab, roof, glass, glow, door, edge, edgeRoof, wood, frame }
   }, [plaster, roofP, woodP, concreteP])
   const roofEdges = useMemo(() => new EdgesGeometry(wallGeometry(7.0, 2.92, []), 30), [])
@@ -91,16 +92,17 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
     m.wall.envMapIntensity = m.slab.envMapIntensity = m.roof.envMapIntensity = 1 - 0.85 * x
     m.wall.depthWrite = x < 0.4
     m.wall.color.copy(old).lerp(fresh, S.ren)
-    m.slab.opacity = 1 - 0.5 * x
+    m.slab.opacity = 1 - 0.82 * x
     m.slab.depthWrite = x < 0.3
     m.roof.opacity = 1 - 0.94 * x
     m.roof.depthWrite = x < 0.3
-    m.glass.opacity = 0.24 - 0.18 * x
-    m.glow.opacity = 0.95 - 0.8 * x
+    m.glass.opacity = 0.24 - 0.21 * x
+    m.glow.opacity = 0.95 - 0.93 * x
     m.glow.emissiveIntensity = (0.2 + 0.5 * S.ren) * (1 - 0.85 * x)
     m.door.opacity = 1 - 0.8 * x
     m.wood.opacity = 1 - 0.35 * x
-    m.frame.opacity = 1 - 0.7 * x
+    m.frame.opacity = 1 - 0.97 * x
+    m.frame.depthWrite = m.door.depthWrite = x < 0.4
     m.edge.opacity = 0.85 * x
     m.edgeRoof.opacity = 0.7 * x
     if (group.current && interactive && !S.free) {
@@ -113,8 +115,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   const roofAngle = Math.atan2(1.8, 2.3)
   return (
     <group ref={group}>
-      <Sparkles count={S.mobile ? 8 : 24} scale={[1.2, 1.4, 1.8]} position={[1.5, 3.5, 0.3]} size={6} speed={0.35} opacity={0.35} color="#d8f1ff" />
-      {/* Walls */}
+            {/* Walls */}
       <Wall w={6.4} h={5.2} holes={FRONT_HOLES} pos={[0, 0, 2]} mat={m.wall} edge={m.edge} />
       <Wall w={6.4} h={5.2} holes={BACK_HOLES} pos={[0, 0, -2]} mat={m.wall} edge={m.edge} />
       <Wall w={4} h={5.2} holes={SIDE_HOLES} pos={[-3.2, 0, 0]} rotY={Math.PI / 2} mat={m.wall} edge={m.edge} />
@@ -166,6 +167,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       <Technik />
       <WallOpening />
       <Kitchen />
+      <OldWardrobe />
       <AssemblyShelf />
       <PipeNetwork />
       <BathroomCutaway />
@@ -173,17 +175,17 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       <Electrics />
 
       {/* Interior lights */}
-      <HeatLights />
+      <RoomLights />
     </group>
   )
 }
 
-function HeatLights() {
+function RoomLights() {
   const a = useRef<import('three').PointLight>(null)
   const b = useRef<import('three').PointLight>(null)
   useFrame(() => {
-    if (a.current) a.current.intensity = 5 * bump(0.1, 0.17, 0.3, 0.4, S.p) + 1.5
-    if (b.current) b.current.intensity = 3 * bump(0.33, 0.42, 0.55, 0.6, S.p) + 0.8
+    if (a.current) a.current.intensity = 5 * bump(0.1, 0.17, 0.32, 0.38, S.p) + 1.5
+    if (b.current) b.current.intensity = 3 * bump(0.38, 0.44, 0.53, 0.58, S.p) + 0.8
   })
   return (
     <>
@@ -198,33 +200,67 @@ function GroundFloor() {
   return <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[6.2, 3.8]} /><meshStandardMaterial {...t} color="#ffffff" metalness={0} roughness={0.6} /></mesh>
 }
 
-/* ---------- Balkon (neuer Boden, Abdichtung, Geländer) ---------- */
+/* ---------- Balkon: Schichtaufbau der Balkonsanierung (fährt auseinander und wieder zusammen) ---------- */
+const balconyX = () => bump(0.73, 0.765, 0.8, 0.835, S.p)
+const BALCONY_LAYERS = ['Betonplatte', 'Abdichtung', 'Drainagematte', 'Feinsteinzeug-Belag']
+
 function Balcony() {
-  const top = useRef<MeshStandardMaterial>(null)
-  const seal = useRef<MeshStandardMaterial>(null)
-  const cOld = useMemo(() => new Color('#4a3a2e'), [])
-  const cNew = useMemo(() => new Color('#cbd5e1'), [])
-  const cSealOld = useMemo(() => new Color('#2a2420'), [])
-  const cSealNew = useMemo(() => new Color('#0ea5e9'), [])
+  const layers = useRef<Group>(null)
+  const top = useRef<Group>(null)
+  const lamps = useRef<Group>(null)
+  const concrete = usePbr('concrete_floor_01', [1.4, 0.6])
+  const stone = usePbr('large_floor_tiles_02', [0.5, 0.5], { metalness: 0 })
+  const cOld = useMemo(() => new Color('#6b5a4a'), [])
+  const cNew = useMemo(() => new Color('#ffffff'), [])
+  const tileMat = useMemo(() => new MeshStandardMaterial({ ...stone, color: '#ffffff', roughness: 0.55 }), [stone])
+  const tiles = useMemo(() => {
+    const out: [number, number][] = []
+    for (let i = 0; i < 5; i++) for (let j = 0; j < 2; j++) out.push([-1.32 + i * 0.66, -0.35 + j * 0.7])
+    return out
+  }, [])
   useFrame(() => {
-    top.current?.color.copy(cOld).lerp(cNew, S.ren)
-    if (seal.current) {
-      seal.current.color.copy(cSealOld).lerp(cSealNew, S.ren)
-      seal.current.emissive.copy(cSealNew).multiplyScalar(S.ren * 0.5)
-    }
+    const X = balconyX()
+    layers.current?.children.forEach((c, i) => { c.position.y = (c.userData.y as number) + X * i * 0.26 })
+    tileMat.color.copy(cOld).lerp(cNew, S.ren)
+    if (top.current) top.current.position.y = 0.155 + X * 4 * 0.26
+    const on = smooth(0.78, 0.84, S.p) * (1 - smooth(0.9, 0.93, S.p)) * (0.25 + 0.75 * S.ren)
+    lamps.current?.children.forEach((c) => {
+      const mat = (c as import('three').Mesh).material as MeshStandardMaterial
+      if (mat.emissiveIntensity !== undefined) mat.emissiveIntensity = 0.2 + 3 * on
+    })
   })
+  const wallZ = 2 - 2.75 + 0.1
   return (
     <group position={[-1.5, 2.55, 2.75]}>
-      <mesh><boxGeometry args={[3.4, 0.16, 1.5]} /><meshStandardMaterial color="#cfd8e3" roughness={0.8} /></mesh>
-      <mesh position={[0, 0.095, 0]}><boxGeometry args={[3.38, 0.03, 1.48]} /><meshStandardMaterial ref={seal} color="#0ea5e9" roughness={0.5} /></mesh>
-      <mesh position={[0, 0.125, 0]}><boxGeometry args={[3.3, 0.03, 1.4]} /><meshStandardMaterial ref={top} color="#cbd5e1" roughness={0.45} /></mesh>
-      {/* Geländer */}
-      <mesh position={[0, 0.55, 0.7]}><boxGeometry args={[3.3, 0.9, 0.02]} /><meshPhysicalMaterial color="#9bd8ff" transparent opacity={0.22} roughness={0.05} /></mesh>
-      <mesh position={[0, 1.02, 0.7]}><boxGeometry args={[3.4, 0.05, 0.05]} /><meshStandardMaterial color="#1e242b" metalness={0.8} roughness={0.3} /></mesh>
-      {[-1.65, -0.55, 0.55, 1.65].map((x) => (
-        <mesh key={x} position={[x, 0.55, 0.7]}><boxGeometry args={[0.05, 0.95, 0.05]} /><meshStandardMaterial color="#1e242b" metalness={0.8} roughness={0.3} /></mesh>
+      <group ref={layers}>
+        <mesh userData={{ y: 0 }} castShadow receiveShadow><boxGeometry args={[3.4, 0.16, 1.5]} /><meshStandardMaterial {...concrete} color="#d6d6d4" /></mesh>
+        <mesh userData={{ y: 0.09 }}><boxGeometry args={[3.38, 0.02, 1.48]} /><meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.25} roughness={0.5} /></mesh>
+        <mesh userData={{ y: 0.11 }}><boxGeometry args={[3.36, 0.02, 1.46]} /><meshStandardMaterial color="#20262e" roughness={0.9} /></mesh>
+        <group userData={{ y: 0.135 }}>
+          {tiles.map(([x, z]) => <mesh key={`${x}${z}`} position={[x, 0, z]} material={tileMat} castShadow receiveShadow><boxGeometry args={[0.65, 0.025, 0.69]} /></mesh>)}
+        </group>
+      </group>
+      {BALCONY_LAYERS.map((t, i) => (
+        <LayerLabel key={t} n={i + 1} text={t} position={[-0.9, 0.05 + i * 0.26, 0.78]} vis={() => balconyX() * (S.p > 0.7 && S.p < 0.86 ? 1 : 0)} color={i === 1 ? '#0ea5e9' : '#ffffff'} />
       ))}
-      <mesh position={[-1.65, 0.55, 0]}><boxGeometry args={[0.04, 0.9, 1.4]} /><meshPhysicalMaterial color="#9bd8ff" transparent opacity={0.18} /></mesh>
+      {/* Geländer (Glas + Edelstahl) */}
+      <group ref={top} position={[0, 0.155, 0]}>
+        <mesh position={[0, 0.45, 0.7]}><boxGeometry args={[3.3, 0.9, 0.02]} /><meshPhysicalMaterial color="#cfe9f7" transparent opacity={0.2} roughness={0.04} clearcoat={1} /></mesh>
+        <mesh position={[0, 0.92, 0.7]}><boxGeometry args={[3.4, 0.05, 0.05]} /><meshStandardMaterial color="#c9ced4" metalness={1} roughness={0.25} /></mesh>
+        {[-1.65, -0.55, 0.55, 1.65].map((x) => (
+          <mesh key={x} position={[x, 0.45, 0.7]}><boxGeometry args={[0.04, 0.95, 0.04]} /><meshStandardMaterial color="#c9ced4" metalness={1} roughness={0.25} /></mesh>
+        ))}
+        <mesh position={[-1.65, 0.45, 0]}><boxGeometry args={[0.02, 0.9, 1.4]} /><meshPhysicalMaterial color="#cfe9f7" transparent opacity={0.16} roughness={0.04} /></mesh>
+      </group>
+      {/* Elektrik/Montage: Außenleuchten neben der Balkontür + Außensteckdose, Leitung in der Fassade */}
+      <group ref={lamps}>
+        {[-1.15, 0.55].map((x) => (
+          <mesh key={x} position={[x, 1.75, wallZ]}><boxGeometry args={[0.1, 0.22, 0.07]} /><meshStandardMaterial color="#fff6dc" emissive="#ffe6b0" emissiveIntensity={0.2} toneMapped={false} /></mesh>
+        ))}
+        <mesh position={[0.95, 0.55, wallZ]}><boxGeometry args={[0.1, 0.1, 0.04]} /><meshStandardMaterial color="#f1f1ef" roughness={0.4} /></mesh>
+      </group>
+      <FlowPipe points={[[-1.15, 1.75, wallZ - 0.1], [-1.15, 2.3, wallZ - 0.1], [0.55, 2.3, wallZ - 0.1], [0.55, 1.75, wallZ - 0.1]]} color="#ffffff" radius={0.014} speed={0.9} glow={() => 0.3 + bump(0.74, 0.78, 0.84, 0.88, S.p)} />
+      <FlowPipe points={[[0.55, 2.3, wallZ - 0.11], [0.95, 2.3, wallZ - 0.11], [0.95, 0.55, wallZ - 0.11]]} color="#f8fafc" radius={0.012} speed={0.9} glow={() => 0.3 + bump(0.74, 0.78, 0.84, 0.88, S.p)} />
     </group>
   )
 }
@@ -256,17 +292,17 @@ function Interior() {
 function Electrics() {
   const spots = useRef<Group>(null)
   const light = useRef<import('three').PointLight>(null)
-  const on = () => 0.25 + 1.0 * smooth(0.66, 0.74, S.p) * (1 - smooth(0.88, 0.92, S.p))
+  const on = () => 0.25 + 1.0 * smooth(0.6, 0.66, S.p) * (1 - smooth(0.88, 0.92, S.p))
   const lit = () => on() * (0.2 + 0.8 * S.ren)
   useFrame(() => {
-    if (light.current) light.current.intensity = 10 * smooth(0.66, 0.74, S.p) * S.ren * (1 - smooth(0.88, 0.92, S.p))
+    if (light.current) light.current.intensity = 10 * smooth(0.64, 0.68, S.p) * S.ren * (1 - smooth(0.88, 0.92, S.p))
     spots.current?.children.forEach((c) => ((c as import('three').Mesh).material as MeshStandardMaterial).emissiveIntensity = 3.2 * lit())
   })
   return (
     <group>
-      <FlowPipe points={[[-3.1, 2.8, -1.9], [-3.1, 5.0, -1.9], [-1.8, 5.05, -1.5], [-0.2, 5.05, -1.0], [-0.2, 5.05, 1.2]]} color="#facc15" radius={0.022} speed={0.9} glow={on} />
+      <FlowPipe points={[[-3.1, 2.8, -1.9], [-3.1, 5.0, -1.9], [-1.8, 5.05, -1.5], [-0.2, 5.05, -1.0], [-0.2, 5.05, 1.2]]} color="#ffffff" radius={0.022} speed={0.9} glow={on} />
       <FlowPipe points={[[-3.1, 2.8, -1.8], [-3.1, 3.2, -1.0], [-3.1, 3.2, 1.2]]} color="#f8fafc" radius={0.02} speed={0.9} glow={on} />
-      <FlowPipe points={[[-0.45, 2.8, -1.9], [-0.45, 3.4, -1.9], [-1.4, 3.4, -1.9]]} color="#facc15" radius={0.02} speed={0.9} glow={on} />
+      <FlowPipe points={[[-0.45, 2.8, -1.9], [-0.45, 3.4, -1.9], [-1.4, 3.4, -1.9]]} color="#ffffff" radius={0.02} speed={0.9} glow={on} />
       <group ref={spots}>
         {[-2.7, -1.7, -0.7].flatMap((x) => [-0.8, 0.9].map((z) => (
           <mesh key={`${x}${z}`} position={[x, 5.12, z]}>

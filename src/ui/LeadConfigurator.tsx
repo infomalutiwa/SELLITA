@@ -23,10 +23,10 @@ export function LeadConfigurator() {
   const inp = 'w-full rounded-xl border border-white/15 bg-white/5 px-3 py-2.5 text-sm outline-none placeholder:text-white/35 focus:border-sky-400'
 
   return (
-    <div className="glass glass-solid pointer-events-auto flex max-h-[56vh] md:max-h-[78vh] w-full flex-col rounded-2xl p-4 md:p-5" data-lenis-prevent>
+    <div className="glass glass-solid pointer-events-auto flex max-h-[56vh] md:max-h-[calc(100vh-290px)] w-full flex-col rounded-2xl p-4 md:p-5" data-lenis-prevent>
       <div className="mb-3 flex items-center gap-2">
         {[0, 1, 2].map((i) => (
-          <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? 'bg-gradient-to-r from-[#ff5722] to-[#38bdf8]' : 'bg-white/15'}`} />
+          <div key={i} className={`h-1 flex-1 rounded-full transition-colors ${i <= step ? 'bg-gradient-to-r from-[#0ea5e9] to-[#38bdf8]' : 'bg-white/15'}`} />
         ))}
         <span className="ml-1 text-[11px] font-semibold tracking-widest text-white/60">{step + 1}/3</span>
       </div>
@@ -43,7 +43,7 @@ export function LeadConfigurator() {
                     return (
                       <button key={s.id} onClick={() => toggle(s.id)} aria-pressed={on}
                         className={`relative flex flex-col items-start gap-1.5 rounded-xl border p-3 text-left text-[13px] font-semibold transition ${on ? 'border-sky-400 bg-sky-400/15' : 'border-white/12 bg-white/5 hover:bg-white/10'}`}>
-                        <Icon size={20} className={on ? 'text-sky-300' : 'text-orange-400'} />
+                        <Icon size={20} className={on ? 'text-sky-300' : 'text-white/70'} />
                         {s.label}
                         {on && <Check size={14} className="absolute right-2 top-2 text-sky-300" />}
                       </button>
@@ -92,7 +92,7 @@ export function LeadConfigurator() {
                   {photo && <p className="text-[11px] text-white/50">Hinweis: Das Foto bitte direkt an die E-Mail bzw. WhatsApp-Nachricht anhängen – es wird nicht automatisch hochgeladen.</p>}
                 </div>
                 <div className="mt-3 grid gap-2">
-                  <a href={mailto} className="flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#ff5722] to-[#ef4444] px-4 py-3 text-sm font-bold shadow-lg shadow-red-900/40"><Mail size={16} /> Per E-Mail senden</a>
+                  <a href={mailto} className="flex items-center justify-center gap-2 rounded-xl bg-[#0ea5e9] px-4 py-3 text-sm font-bold shadow-lg shadow-sky-900/40"><Mail size={16} /> Per E-Mail senden</a>
                   <div className="grid grid-cols-2 gap-2">
                     <a href={wa} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 rounded-xl border border-emerald-400/50 bg-emerald-400/10 px-3 py-2.5 text-sm font-semibold"><MessageCircle size={16} /> WhatsApp</a>
                     <a href={FIRMA.tel} className="flex items-center justify-center gap-2 rounded-xl border border-sky-400/50 bg-sky-400/10 px-3 py-2.5 text-sm font-semibold"><Phone size={16} /> {FIRMA.phone}</a>

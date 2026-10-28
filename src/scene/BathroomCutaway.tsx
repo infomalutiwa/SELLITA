@@ -7,6 +7,7 @@ import {
 import { S, clamp01, smooth } from '../state'
 import { ExternalModelLoader } from './ExternalModelLoader'
 import { usePbr } from './pbr'
+import { LayerLabel } from './LayerLabel'
 
 const ease = (t: number) => 1 - Math.pow(1 - clamp01(t), 3)
 const bounce = (t: number) => {
@@ -19,7 +20,13 @@ const lathe = (pts: [number, number][], seg = 64) =>
 
 const Chrome = () => <meshStandardMaterial color="#e6ebf0" metalness={1} roughness={0.08} envMapIntensity={1.6} />
 
-/** Badsanierung: Altbestand wird demontiert, Marmor-Großformatfliesen klappen an, Wanne/Waschtisch/Dusche setzen sich zusammen. */
+// Bad-Zeitfenster: b = 0..1 zwischen p 0.40 und 0.55
+const bathT = () => (S.p - 0.4) / 0.15
+// Explosionsansicht: Schichten fahren auseinander und setzen sich wieder zusammen
+const explode = () => { const b = bathT(); return smooth(0.12, 0.3, b) * (1 - smooth(0.7, 0.88, b)) }
+const TILE_Z = -1.57
+
+/** Badsanierung als Explosionsansicht: Rohre -> Abdichtung -> Fliesen -> Sanitärobjekte (Wanne, Waschtisch, Dusche). */
 export function BathroomCutaway() {
   const oldRef = useRef<Group>(null)
   const tiles = useRef<Group>(null)
@@ -28,6 +35,8 @@ export function BathroomCutaway() {
   const glass = useRef<Group>(null)
   const shower = useRef<Group>(null)
   const drops = useRef<Points>(null)
+  const seal = useRef<Group>(null)
+  const objs = useRef<Group>(null)
 
   const marble = usePbr('marble_01', [0.5, 0.45], { roughness: 0.55 })
   const oak = usePbr('oak_wood_planks', [0.5, 0.35], { metalness: 0 })
@@ -36,7 +45,7 @@ export function BathroomCutaway() {
   const tileList = useMemo(() => {
     const out: { p: [number, number, number]; s: [number, number]; r: 'wall' | 'floor' | 'side' }[] = []
     const x0 = 0.78, cw = 0.78
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.72 + 0.6 * (r + 0.5), -1.86], s: [cw - 0.015, 0.585], r: 'wall' })
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.72 + 0.6 * (r + 0.5), TILE_Z], s: [cw - 0.015, 0.585], r: 'wall' })
     for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.76, -1.55 + 0.9 * (r + 0.5) - 0.35], s: [cw - 0.015, 0.885], r: 'floor' })
     for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [0.7, 2.72 + 0.6 * (r + 0.5), -1.55 + 1.1 * (c + 0.5)], s: [1.08, 0.585], r: 'side' })
     return out
@@ -61,10 +70,11 @@ export function BathroomCutaway() {
   const bowlGeo = useMemo(() => lathe([[0.001, 0.0], [0.09, 0.0], [0.15, 0.06], [0.2, 0.14], [0.205, 0.16], [0.19, 0.16], [0.18, 0.13], [0.12, 0.06], [0.001, 0.03]], 48), [])
 
   useFrame(({ clock }) => {
-    const b = (S.p - 0.35) / 0.2
+    const b = bathT()
     const t = clock.elapsedTime
-    // Altbestand rutscht heraus (Möbel demontieren)
-    const out = clamp01((b - 0.02) / 0.22)
+    const X = explode()
+    // 0 · Altbestand wird demontiert und fährt heraus
+    const out = clamp01((b - 0.0) / 0.14)
     if (oldRef.current) {
       const e = out * out * (3 - 2 * out)
       oldRef.current.visible = S.p > 0.3 && out < 1
@@ -72,32 +82,47 @@ export function BathroomCutaway() {
       oldRef.current.rotation.z = Math.sin(t * 30) * 0.02 * (out > 0 && out < 1 ? 1 : 0)
       oldRef.current.scale.setScalar(1 - 0.5 * smooth(0.7, 1, out))
     }
-    // Fliesen klappen an
+    // 2 · Abdichtung wird von unten nach oben aufgetragen
+    const ks = clamp01((b - 0.1) / 0.16)
+    seal.current?.children.forEach((c, i) => {
+      const n = c.userData.n as [number, number, number]
+      const base = c.userData.base as [number, number, number]
+      c.visible = ks > 0
+      const k = Math.max(0.001, ease(ks))
+      if (i === 1) c.scale.set(1, 1, k); else c.scale.set(1, k, 1)
+      const h = c.userData.h as number
+      c.position.set(base[0] + n[0] * 0.35 * X, (i === 1 ? base[1] : 2.72 + (h * k) / 2) + n[1] * 0.22 * X, base[2] + n[2] * 0.35 * X)
+    })
+    // 3 · Fliesen klappen an (in der Explosion vor der Abdichtung)
     tiles.current?.children.forEach((c, i) => {
-      const k = clamp01((b - 0.24 - i * 0.008) / 0.14)
-      c.rotation.x = (1 - ease(k)) * Math.PI * 0.5
+      const tl = tileList[i]
+      const k = clamp01((b - 0.25 - i * 0.005) / 0.14)
+      const off = tl.r === 'floor' ? 0.45 * X : 0.75 * X
+      c.position.set(tl.p[0] + (tl.r === 'side' ? off : 0), tl.p[1] + (tl.r === 'floor' ? off : 0), tl.p[2] + (tl.r === 'wall' ? off : 0))
+      c.rotation.x = (tl.r === 'floor' ? -Math.PI / 2 : 0) + (1 - ease(k)) * Math.PI * 0.5
       c.scale.setScalar(Math.max(0.0001, ease(k * 1.4)))
       c.visible = k > 0
     })
-    // Neue Möbel setzen sich zusammen
-    const kt = clamp01((b - 0.5) / 0.2)
+    // 4 · Sanitärobjekte setzen sich zusammen (ganz vorne in der Explosion)
+    if (objs.current) objs.current.position.set(0, 1.0 * X, 0.8 * X)
+    const kt = clamp01((b - 0.42) / 0.18)
     if (tub.current) { tub.current.visible = kt > 0; tub.current.position.y = 2.72 + (1 - bounce(kt)) * 3.2 }
-    const kb = clamp01((b - 0.6) / 0.18)
+    const kb = clamp01((b - 0.5) / 0.16)
     if (basin.current) { basin.current.visible = kb > 0; basin.current.position.x = 1.6 - (1 - ease(kb)) * 3.5 }
-    const kg = clamp01((b - 0.7) / 0.16)
+    const kg = clamp01((b - 0.58) / 0.14)
     if (glass.current) { glass.current.visible = kg > 0; glass.current.position.y = 2.72 + (1 - ease(kg)) * 2.5 }
-    const ks = clamp01((b - 0.78) / 0.12)
-    if (shower.current) { shower.current.visible = ks > 0; shower.current.scale.setScalar(Math.max(0.001, ease(ks))) }
+    const kh = clamp01((b - 0.64) / 0.12)
+    if (shower.current) { shower.current.visible = kh > 0; shower.current.scale.setScalar(Math.max(0.001, ease(kh))) }
     // Regen
     if (drops.current) {
-      const on = S.p > 0.46 && S.p < 0.8
+      const on = S.p > 0.52 && S.p < 0.62
       drops.current.visible = on
       if (on) {
         const pos = dropGeo.attributes.position as BufferAttribute
         const seed = dropGeo.userData.seed as Float32Array
         for (let i = 0; i < N; i++) {
           const f = (seed[i * 3 + 1] + t * (0.9 + (i % 5) * 0.08)) % 1
-          pos.setXYZ(i, 2.55 + seed[i * 3] * (0.5 + f * 0.6), 4.5 - f * 1.76, -1.35 + seed[i * 3 + 2] * (0.5 + f * 0.6))
+          pos.setXYZ(i, 2.55 + seed[i * 3] * (0.5 + f * 0.6), 4.5 - f * 1.76, -1.25 + seed[i * 3 + 2] * (0.45 + f * 0.5))
         }
         pos.needsUpdate = true
       }
@@ -114,16 +139,35 @@ export function BathroomCutaway() {
         <ExternalModelLoader file="ph:painted_wooden_cabinet" height={1.1} position={[2.55, 2.72, -1.5]} fallback={null} />
       </group>
 
+      {/* Abdichtung (Flüssigabdichtung + Dichtband), blau */}
+      <group ref={seal}>
+        {([
+          { base: [1.95, 3.92, TILE_Z - 0.035], size: [2.36, 2.4, 0.012], n: [0, 0, 1], h: 2.4 },
+          { base: [1.89, 2.735, -0.1], size: [2.46, 0.012, 3.6], n: [0, 1, 0], h: 0 },
+          { base: [0.68, 3.92, -0.1], size: [0.012, 2.4, 3.6], n: [1, 0, 0], h: 2.4 },
+        ] as const).map((l, i) => (
+          <mesh key={i} position={l.base as unknown as [number, number, number]} userData={{ base: l.base, n: l.n, h: l.h }} visible={false}>
+            <boxGeometry args={l.size as unknown as [number, number, number]} />
+            <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.25} roughness={0.55} transparent opacity={0.92} />
+          </mesh>
+        ))}
+      </group>
+      <LayerLabel n={1} text="Rohre" position={[0.5, 3.75, -1.7]} vis={() => explode()} />
+      <LayerLabel n={2} text="Abdichtung" position={[1.1, 4.95, -1.25]} vis={() => explode()} />
+      <LayerLabel n={3} text="Fliesen" position={[2.7, 5.0, -0.85]} vis={() => explode()} />
+      <LayerLabel n={4} text="Sanitärobjekte" position={[1.5, 4.3, 1.05]} vis={() => explode()} color="#ffffff" />
+
       {/* Großformat-Marmorfliesen */}
       <group ref={tiles}>
         {tileList.map((t, i) => (
           <mesh key={i} position={t.p} rotation={t.r === 'floor' ? [-Math.PI / 2, 0, 0] : t.r === 'side' ? [0, Math.PI / 2, 0] : [0, 0, 0]} visible={false} receiveShadow>
             <boxGeometry args={[t.s[0], t.s[1], 0.04]} />
-            <meshPhysicalMaterial {...marble} color="#f4f2ee" clearcoat={0.6} clearcoatRoughness={0.12} />
+            <meshPhysicalMaterial {...marble} map={null} color="#e7e9ea" roughness={0.28} clearcoat={0.8} clearcoatRoughness={0.08} />
           </mesh>
         ))}
       </group>
 
+      <group ref={objs}>
       {/* Freistehende Badewanne (glatte Keramik) mit Standarmatur und Holzablage */}
       <group ref={tub} position={[1.5, 2.72, 0.3]} visible={false}>
         <mesh geometry={tubGeo} scale={[1, 1, 2.05]} material={ceramic} castShadow receiveShadow />
@@ -142,7 +186,7 @@ export function BathroomCutaway() {
       </group>
 
       {/* Waschtisch: schwebender Eichen-Unterschrank, Marmorplatte, Aufsatzbecken, Spiegel */}
-      <group ref={basin} position={[1.6, 0, -1.6]} visible={false}>
+      <group ref={basin} position={[1.6, 0, -1.36]} visible={false}>
         <mesh position={[0, 3.3, 0.02]} castShadow receiveShadow><boxGeometry args={[1.0, 0.34, 0.44]} /><meshStandardMaterial {...oak} color="#f2dfc4" /></mesh>
         {[-0.25, 0.25].map((x) => <mesh key={x} position={[x, 3.3, 0.245]}><boxGeometry args={[0.46, 0.005, 0.01]} /><meshStandardMaterial color="#3a2d20" /></mesh>)}
         <mesh position={[0, 3.49, 0.02]} castShadow><boxGeometry args={[1.04, 0.04, 0.48]} /><meshPhysicalMaterial {...marble} color="#f4f2ee" clearcoat={0.5} /></mesh>
@@ -167,6 +211,7 @@ export function BathroomCutaway() {
         <mesh position={[0, -0.013, 0]}><cylinderGeometry args={[0.22, 0.22, 0.004, 48]} /><meshStandardMaterial color="#9aa5b1" metalness={1} roughness={0.3} /></mesh>
         <mesh position={[0, 0.2, -0.3]}><cylinderGeometry args={[0.014, 0.014, 0.4, 12]} /><Chrome /></mesh>
         <mesh position={[0, 0.0, -0.15]} rotation={[Math.PI / 2, 0, 0]}><cylinderGeometry args={[0.014, 0.014, 0.3, 12]} /><Chrome /></mesh>
+      </group>
       </group>
       <points ref={drops} geometry={dropGeo} frustumCulled={false} visible={false}>
         <pointsMaterial color="#cdeeff" size={S.mobile ? 0.045 : 0.035} transparent opacity={0.7} blending={AdditiveBlending} depthWrite={false} toneMapped={false} />

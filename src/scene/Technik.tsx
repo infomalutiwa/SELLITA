@@ -5,7 +5,7 @@ import { S, bump } from '../state'
 
 const chrome = { color: '#d7dde5', metalness: 1, roughness: 0.18 } as const
 const blue = <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.6} roughness={0.4} />
-const red = <meshStandardMaterial color="#ef4444" emissive="#ef4444" emissiveIntensity={0.6} roughness={0.4} />
+const red = <meshStandardMaterial color="#c98b5b" metalness={1} roughness={0.3} />
 
 /** Hausanschluss (Sanitär): Wasserzähler, Druckminderer und Verteilerbalken mit Absperrventilen. */
 export function Technik() {
@@ -20,7 +20,7 @@ export function Technik() {
         <mesh rotation={[0, 0, Math.PI / 2]} castShadow><cylinderGeometry args={[0.07, 0.07, 0.55, 20]} /><meshStandardMaterial {...chrome} /></mesh>
         <mesh position={[0, 0.02, 0.0]} castShadow><cylinderGeometry args={[0.16, 0.16, 0.14, 32]} /><meshStandardMaterial color="#1e242b" roughness={0.4} /></mesh>
         <mesh position={[0, 0.02, 0.075]}><circleGeometry args={[0.14, 32]} /><meshStandardMaterial color="#f8fafc" roughness={0.2} /></mesh>
-        <mesh position={[0, 0.02, 0.08]} ref={needle}><boxGeometry args={[0.012, 0.11, 0.004]} /><meshBasicMaterial color="#ef4444" toneMapped={false} /></mesh>
+        <mesh position={[0, 0.02, 0.08]} ref={needle}><boxGeometry args={[0.012, 0.11, 0.004]} /><meshBasicMaterial color="#0ea5e9" toneMapped={false} /></mesh>
         <mesh position={[0, 0.02, 0.088]} rotation={[Math.PI / 2, 0, 0]}><torusGeometry args={[0.15, 0.012, 8, 32]} /><meshStandardMaterial {...chrome} /></mesh>
         {[-0.32, 0.32].map((x) => <mesh key={x} position={[x, 0, 0]} rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[0.1, 0.1, 0.05, 6]} /><meshStandardMaterial {...chrome} /></mesh>)}
       </group>

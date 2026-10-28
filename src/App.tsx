@@ -106,7 +106,7 @@ export default function App() {
           <button onClick={() => setFree(!free)} className="glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold" aria-pressed={free}>
             {free ? <X size={14} /> : <Orbit size={14} />}<span className="hidden sm:inline">{free ? 'Zurück zur Tour' : 'Haus frei drehen'}</span>
           </button>
-          <a href={FIRMA.tel} className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[#ff5722] to-[#ef4444] px-3 py-2 text-xs font-bold shadow-lg shadow-red-900/40"><Phone size={14} /><span className="hidden sm:inline">{FIRMA.phone}</span></a>
+          <a href={FIRMA.tel} className="flex items-center gap-2 rounded-full bg-[#0ea5e9] px-3 py-2 text-xs font-bold shadow-lg shadow-sky-900/40"><Phone size={14} /><span className="hidden sm:inline">{FIRMA.phone}</span></a>
         </div>
       </header>
 
@@ -136,7 +136,7 @@ function ProgressBar() {
     loop()
     return () => cancelAnimationFrame(raf)
   }, [])
-  return <div className="fixed inset-x-0 top-0 z-40 h-[3px] bg-white/5"><div ref={ref} className="h-full origin-left bg-gradient-to-r from-[#ff5722] via-[#ef4444] to-[#38bdf8]" style={{ transform: 'scaleX(0)' }} /></div>
+  return <div className="fixed inset-x-0 top-0 z-40 h-[3px] bg-white/5"><div ref={ref} className="h-full origin-left bg-gradient-to-r from-[#0ea5e9] to-white" style={{ transform: 'scaleX(0)' }} /></div>
 }
 
 function Letterbox() {
@@ -155,7 +155,7 @@ function Loader({ onDone }: { onDone: () => void }) {
         <motion.div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#07090e]" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
           <Logo big />
           <div className="h-[3px] w-56 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-gradient-to-r from-[#ff5722] to-[#38bdf8] transition-all" style={{ width: `${Math.max(4, progress)}%` }} />
+            <div className="h-full bg-gradient-to-r from-[#0ea5e9] to-white transition-all" style={{ width: `${Math.max(4, progress)}%` }} />
           </div>
           <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Haus wird aufgebaut · {Math.round(progress)}%</p>
         </motion.div>

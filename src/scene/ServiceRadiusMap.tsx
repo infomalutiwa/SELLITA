@@ -32,7 +32,7 @@ void main(){
   float ring = (1.0 - smoothstep(0.0,0.07,abs(d-uR))) * uFade;
   col += vec3(0.2,0.8,1.6) * ring * 2.2;
   float w = fract(uTime*0.18); float rw = w*uR;
-  col += vec3(1.0,0.35,0.15) * (1.0 - smoothstep(0.0,0.2,abs(d-rw))) * (1.0-w) * 0.9 * uFade;
+  col += vec3(0.9,0.97,1.0) * (1.0 - smoothstep(0.0,0.2,abs(d-rw))) * (1.0-w) * 0.9 * uFade;
   float r50 = 1.0 - smoothstep(0.0,0.03,abs(d-uR*0.5)); col += vec3(0.3,0.5,0.7) * r50 * 0.5 * uFade;
   col *= 1.0 - smoothstep(11.0, 14.0, d) * 0.9;
   gl_FragColor = vec4(col,1.0);
@@ -66,21 +66,21 @@ export function ServiceRadiusMap() {
       {/* Miniatur-Haus auf Gärtringen */}
       <group position={[0, hc(0, 0), 0]} scale={0.22}>
         <mesh position={[0, 1.3, 0]}><boxGeometry args={[3.2, 2.6, 2.2]} /><meshStandardMaterial color="#f8fafc" /></mesh>
-        <mesh position={[0, 3.2, 0]} rotation={[0, 0, Math.PI / 4]} scale={[1, 1, 1]}><boxGeometry args={[2.4, 2.4, 2.4]} /><meshStandardMaterial color="#ef4444" /></mesh>
+        <mesh position={[0, 3.2, 0]} rotation={[0, 0, Math.PI / 4]} scale={[1, 1, 1]}><boxGeometry args={[2.4, 2.4, 2.4]} /><meshStandardMaterial color="#2b3340" /></mesh>
         <mesh position={[1.7, 1.3, 0]}><boxGeometry args={[0.2, 2.6, 2.2]} /><meshStandardMaterial color="#0ea5e9" /></mesh>
       </group>
-      <mesh position={[0, hc(0, 0) + 1.4, 0]}><cylinderGeometry args={[0.012, 0.012, 2.4, 6]} /><meshBasicMaterial color="#ff5722" toneMapped={false} /></mesh>
-      <mesh position={[0, hc(0, 0) + 2.65, 0]}><sphereGeometry args={[0.1, 16, 16]} /><meshBasicMaterial color="#ff5722" toneMapped={false} /></mesh>
+      <mesh position={[0, hc(0, 0) + 1.4, 0]}><cylinderGeometry args={[0.012, 0.012, 2.4, 6]} /><meshBasicMaterial color="#ffffff" toneMapped={false} /></mesh>
+      <mesh position={[0, hc(0, 0) + 2.65, 0]}><sphereGeometry args={[0.1, 16, 16]} /><meshBasicMaterial color="#0ea5e9" toneMapped={false} /></mesh>
       <Html position={[0, hc(0, 0) + 3.1, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-        <div className="lbl3d" style={{ borderColor: '#ff5722', fontSize: 12 }}>71116 Gärtringen</div>
+        <div className="lbl3d" style={{ borderColor: '#ffffff', fontSize: 12 }}>71116 Gärtringen</div>
       </Html>
 
       {CITIES.map((c) => (
         <group key={c.name} position={[c.x, hc(c.x, c.z), c.z]}>
           <mesh position={[0, 0.25, 0]}><cylinderGeometry args={[0.03, 0.03, 0.5, 6]} /><meshBasicMaterial color="#38bdf8" toneMapped={false} /></mesh>
-          <mesh position={[0, 0.52, 0]}><sphereGeometry args={[0.09, 12, 12]} /><meshBasicMaterial color={c.main ? '#ff5722' : '#38bdf8'} toneMapped={false} /></mesh>
+          <mesh position={[0, 0.52, 0]}><sphereGeometry args={[0.09, 12, 12]} /><meshBasicMaterial color={c.main ? '#ffffff' : '#38bdf8'} toneMapped={false} /></mesh>
           <Html position={[0, 0.8, 0]} center zIndexRange={[5, 0]} style={{ pointerEvents: 'none' }}>
-            <div className="lbl3d" style={c.main ? { borderColor: '#ff5722' } : undefined}>{c.name}</div>
+            <div className="lbl3d" style={c.main ? { borderColor: '#ffffff' } : undefined}>{c.name}</div>
           </Html>
         </group>
       ))}

@@ -11,21 +11,32 @@ type Key = { p: number; pos: V3; tgt: V3; sx?: number }
 const m = MAP_Y
 // Kamera-Keyframes: p = Scroll-Fortschritt
 export const KEYS: Key[] = [
+  // Akt 0 · Das Haus
   { p: 0.0, pos: [9.5, 4.8, 13.5], tgt: [0, 3.0, 0], sx: -3.4 },
-  { p: 0.1, pos: [7.5, 4.2, 11], tgt: [0, 3.0, 0], sx: -2.4 },
-  { p: 0.17, pos: [-1.6, 1.7, 5.0], tgt: [-1.5, 1.2, -1.8] }, // Wand-Einblick / Hausanschluss
-  { p: 0.3, pos: [1.2, 1.7, 4.6], tgt: [1.5, 1.0, -0.8] }, // Wohnküche
-  { p: 0.38, pos: [3.2, 2.6, 4.2], tgt: [0.6, 2.6, -1.7] }, // Steigleitung
-  { p: 0.44, pos: [2.6, 3.9, 4.4], tgt: [1.7, 3.5, -1.2] }, // Bad
-  { p: 0.53, pos: [3.4, 4.3, 4.6], tgt: [1.7, 3.5, -1] },
-  { p: 0.57, pos: [2.0, 1.9, 3.3], tgt: [1.8, 2.15, -1.2] }, // Leckortung
-  { p: 0.68, pos: [2.2, 1.95, 2.8], tgt: [1.8, 2.15, -1.2] },
-  { p: 0.72, pos: [-5.5, 4.2, 8.2], tgt: [-2.0, 3.4, 0.8] }, // Balkon + Möbelmontage
-  { p: 0.83, pos: [-2.5, 4.6, 8.5], tgt: [-1.2, 3.4, 0.6] },
-  { p: 0.9, pos: [0, m + 14, 14], tgt: [0, m, -0.5], sx: -3.5 }, // Karte
+  { p: 0.08, pos: [7.5, 4.2, 11], tgt: [0, 3.0, 0], sx: -2.4 },
+  // Akt 1 · Zoom in die Hauswand: Hausanschluss, dann Thermografie-Scan der Wand
+  { p: 0.17, pos: [-1.6, 1.7, 5.0], tgt: [-1.5, 1.2, -1.8] },
+  { p: 0.24, pos: [2.0, 1.85, 3.7], tgt: [1.8, 1.8, -1.0], sx: -1.0 },
+  { p: 0.31, pos: [2.1, 1.9, 3.2], tgt: [1.8, 2.0, -1.1], sx: -0.9 },
+  { p: 0.34, pos: [2.3, 2.0, 2.8], tgt: [1.6, 2.15, -1.2], sx: -0.6 },
+  // Akt 2 · entlang der blauen Steigleitung hoch ins Bad, Schichten fahren auseinander
+  { p: 0.39, pos: [3.0, 2.7, 4.0], tgt: [0.6, 2.9, -1.7] },
+  { p: 0.45, pos: [3.6, 4.4, 4.9], tgt: [1.85, 3.6, -0.9], sx: 1.2 },
+  { p: 0.53, pos: [2.8, 4.0, 4.2], tgt: [1.85, 3.55, -1.0], sx: 1.0 },
+  // Akt 3 · im selben Stockwerk nach links in den Wohnraum (Möbel & Elektrik)
+  { p: 0.59, pos: [0.4, 4.1, 4.8], tgt: [-1.4, 3.6, -0.9], sx: -1.3 },
+  { p: 0.68, pos: [-0.8, 4.2, 4.3], tgt: [-1.5, 3.6, -1.1], sx: -1.2 },
+  // Akt 4 · hinaus auf den angeschlossenen Balkon (Schichtaufbau)
+  { p: 0.74, pos: [-5.0, 4.5, 8.2], tgt: [-1.5, 3.0, 2.5], sx: 1.4 },
+  { p: 0.83, pos: [-0.9, 4.5, 7.4], tgt: [-1.6, 3.0, 2.4], sx: 1.3 },
+  // Akt 5 · Zoom-out aus dem Haus auf die 100-km-Karte
+  { p: 0.87, pos: [8, 8, 17], tgt: [-0.5, 3.0, 0.5] },
+  { p: 0.92, pos: [0, m + 14, 14], tgt: [0, m, -0.5], sx: -3.5 },
   { p: 1.0, pos: [0, m + 12.5, 12.5], tgt: [0, m, -0.5], sx: -4 },
 ]
 
+/** Blickpunkt der Kamera – Fokus für die Tiefenunschärfe */
+export const FOCUS = new Vector3(0, 3, 0)
 let shift = 0
 const a = new Vector3(), b = new Vector3(), pos = new Vector3(), tgt = new Vector3(), cur = new Vector3()
 
@@ -78,6 +89,7 @@ export function CameraRig() {
     camera.position.lerp(cur, Math.min(1, dt * 12))
     look.current.lerp(tgt, Math.min(1, dt * 12))
     camera.lookAt(look.current)
+    FOCUS.copy(look.current)
     const cam = camera as PerspectiveCamera
     const fov = 30 + 12 * smooth(0.04, 0.16, S.p) - 6 * smooth(0.85, 0.9, S.p)
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 4); cam.updateProjectionMatrix() }

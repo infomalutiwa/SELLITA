@@ -15,7 +15,7 @@ export function WallOpening() {
     wool: new MeshStandardMaterial({ color: '#e9d98a', roughness: 1, transparent: true }),
     board: new MeshStandardMaterial({ color: '#d8dde3', roughness: 0.9, transparent: true }),
   }), [])
-  const vis = () => bump(0.09, 0.15, 0.34, 0.4, S.p)
+  const vis = () => bump(0.09, 0.15, 0.22, 0.27, S.p)
   useFrame(({ clock }) => {
     const v = vis()
     if (root.current) root.current.visible = v > 0.01
@@ -35,7 +35,7 @@ export function WallOpening() {
       {/* geschlossener Teil als Gipskarton, damit der Übergang sichtbar bleibt */}
       <mesh position={[0.9, 1.35, 0.02]} material={mats.board}><boxGeometry args={[1.2, 2.3, 0.03]} /></mesh>
       {/* Elektro-Leerrohre */}
-      <FlowPipe points={[[-3.0, 0.6, 0.12], [-1.0, 0.6, 0.12], [-0.9, 1.2, 0.12], [-0.9, 2.3, 0.12]]} color="#facc15" radius={0.018} speed={0.9} glow={() => 0.4 + vis()} />
+      <FlowPipe points={[[-3.0, 0.6, 0.12], [-1.0, 0.6, 0.12], [-0.9, 1.2, 0.12], [-0.9, 2.3, 0.12]]} color="#ffffff" radius={0.018} speed={0.9} glow={() => 0.4 + vis()} />
       <FlowPipe points={[[-2.6, 0.3, 0.12], [-2.6, 1.5, 0.12], [-1.6, 2.0, 0.12], [-0.4, 2.0, 0.12]]} color="#f8fafc" radius={0.016} speed={0.9} glow={() => 0.4 + vis()} />
       {/* Scan-Strahl */}
       <mesh ref={beam} position={[-3, 1.35, 0.15]} rotation={[0, Math.PI / 2, 0]}>
@@ -138,8 +138,8 @@ export function AssemblyShelf() {
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
-    const k = clamp01((S.p - 0.69) / 0.1)
-    const on = S.p > 0.66 && S.p < 0.9
+    const k = clamp01((S.p - 0.6) / 0.08)
+    const on = S.p > 0.57 && S.p < 0.9
     if (root.current) root.current.visible = on
     wood.color.copy(old).lerp(neu, S.ren)
     parts.current?.children.forEach((c, i) => {
@@ -151,7 +151,7 @@ export function AssemblyShelf() {
     })
     if (books.current) books.current.visible = k > 0.92
     if (drill.current) {
-      const a = 1 - smooth(0.78, 0.82, S.p)
+      const a = 1 - smooth(0.68, 0.71, S.p)
       drill.current.visible = on && a > 0.02 && k > 0.02
       drill.current.position.set(0.1 + Math.sin(t * 1.3) * 0.5, 1.5 + Math.sin(t * 2.1) * 0.12 + k * 0.4, 0.7 + Math.cos(t * 1.1) * 0.25)
       drill.current.rotation.set(0.1, -0.6 + Math.sin(t) * 0.3, Math.sin(t * 1.7) * 0.1)
@@ -178,6 +178,41 @@ export function AssemblyShelf() {
         <ExternalModelLoader file="ph:Drill_01" length={0.3} position={[0, 0, 0]} />
         <pointLight ref={led} position={[-0.15, 0, 0.1]} color="#cfe9ff" distance={1.5} intensity={1.6} />
       </group>
+    </group>
+  )
+}
+
+/* ============ Möbel-Demontage: alter Furnierschrank zerlegt sich in seine Platten, bevor das neue Regal entsteht ============ */
+export function OldWardrobe() {
+  const root = useRef<Group>(null)
+  const mat = useMemo(() => new MeshStandardMaterial({ color: '#6e5843', roughness: 0.7 }), [])
+  const panels = useMemo(() => {
+    const W = 1.25, H = 1.3, D = 0.42, T = 0.025
+    return [
+      { p: [-W / 2, H / 2, 0], s: [T, H, D], to: [-1.6, 0.4, 2.2] },
+      { p: [W / 2, H / 2, 0], s: [T, H, D], to: [1.4, 0.6, 2.4] },
+      { p: [0, H, 0], s: [W, T, D], to: [0.2, 1.4, 2.0] },
+      { p: [0, 0.04, 0], s: [W, T, D], to: [-0.4, -0.02, 2.6] },
+      { p: [0, H / 2, -D / 2], s: [W, H, 0.01], to: [0.0, 0.8, -0.05] },
+      { p: [-W / 4, H / 2, D / 2], s: [W / 2 - 0.01, H - 0.05, T], to: [-1.0, 0.2, 3.0] },
+      { p: [W / 4, H / 2, D / 2], s: [W / 2 - 0.01, H - 0.05, T], to: [1.0, 0.3, 3.1] },
+    ] as { p: [number, number, number]; s: [number, number, number]; to: [number, number, number] }[]
+  }, [])
+  useFrame(() => {
+    const k = clamp01((S.p - 0.565) / 0.035)
+    if (root.current) root.current.visible = !S.free && S.p > 0.3 && k < 1
+    root.current?.children.forEach((c, i) => {
+      const pn = panels[i]
+      const e = clamp01(k * 1.4 - i * 0.06)
+      const s = e * e * (3 - 2 * e)
+      c.position.set(pn.p[0] + pn.to[0] * s, pn.p[1] + pn.to[1] * s, pn.p[2] + pn.to[2] * s)
+      c.rotation.set(s * (i - 3) * 0.4, s * (i % 2 ? 0.8 : -0.8), s * 0.3)
+      c.scale.setScalar(1 - 0.7 * smooth(0.6, 1, e))
+    })
+  })
+  return (
+    <group ref={root} position={[-0.25, 2.72, -1.68]} visible={false}>
+      {panels.map((pn, i) => <mesh key={i} position={pn.p} material={mat} castShadow><boxGeometry args={pn.s} /></mesh>)}
     </group>
   )
 }

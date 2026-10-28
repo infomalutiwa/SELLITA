@@ -1,15 +1,15 @@
 import { useEffect, useRef, useState } from 'react'
 import { Pause, Play } from 'lucide-react'
-import { S } from '../state'
+import { S, sceneOf } from '../state'
 
 // Scroll-Fortschritt <-> Film-Zeit (Sekunden)
-const MARK_P = [0, 0.38, 0.57, 0.72, 0.92, 1]
+const MARK_P = [0, 0.39, 0.58, 0.73, 0.92, 1]
 const MARK_T = [0, 15, 30, 45, 60, 65]
 export const MARKS = [
   { t: '00:00', label: 'Das Haus & Wand-Scan', p: 0 },
-  { t: '00:15', label: 'Bad & Sanitär', p: 0.38 },
-  { t: '00:30', label: 'Wohnraum & Möbel', p: 0.57 },
-  { t: '00:45', label: 'Balkon & Elektrik', p: 0.72 },
+  { t: '00:15', label: 'Bad & Sanitär', p: 0.39 },
+  { t: '00:30', label: 'Wohnraum & Möbel', p: 0.58 },
+  { t: '00:45', label: 'Balkon & Elektrik', p: 0.73 },
   { t: '01:00', label: '100 km Radius & Anfrage', p: 0.92 },
 ]
 
@@ -33,8 +33,8 @@ export function Timeline({ playing, onPlay, onSeek }: { playing: boolean; onPlay
       if (fill.current) fill.current.style.transform = `scaleX(${p})`
       if (head.current) head.current.style.left = `${p * 100}%`
       if (time.current) time.current.textContent = `${fmt(pToT(p))} / 01:05`
-      let a = 0
-      MARKS.forEach((m, i) => { if (p >= m.p - 0.001) a = i })
+      // Szene 0+1 (Haus & Wand-Scan) teilen sich die erste Marke
+      const a = Math.max(0, sceneOf(p) - 1)
       setActive((x) => (x === a ? x : a))
       raf = requestAnimationFrame(loop)
     }

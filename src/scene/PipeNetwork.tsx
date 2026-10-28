@@ -1,11 +1,12 @@
-import { S, bump, smooth } from '../state'
+import { S, bump } from '../state'
 import { FlowPipe } from './FlowPipe'
 import { PIPES } from './layout'
 
 const wallGlow = () => 0.6 + 1.0 * bump(0.1, 0.17, 0.33, 0.4, S.p)
-const waterGlow = () => 0.6 + 1.0 * bump(0.3, 0.38, 0.52, 0.6, S.p) + 0.5 * smooth(0.5, 0.58, S.p) * (1 - smooth(0.7, 0.75, S.p))
+// Steigleitung leuchtet beim Wand-Scan (Leitung im Wärmebild) und auf dem Weg ins Bad (Schicht 1: Rohre)
+const waterGlow = () => 0.6 + 1.0 * bump(0.34, 0.39, 0.48, 0.54, S.p) + 0.6 * bump(0.24, 0.29, 0.33, 0.37, S.p)
 
-const RED = '#ff3b1f' // Warmwasser (Sanitär)
+const RED = '#d9a37a' // Warmwasser: Kupferrohr (Rot bleibt der Thermografie vorbehalten)
 const BLUE = '#2bb7ff' // Kaltwasser
 
 export function PipeNetwork() {

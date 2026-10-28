@@ -20,8 +20,9 @@ export const smoother = (t: number) => t * t * t * (t * (t * 6 - 15) + 10)
 export const bump = (a: number, b: number, c: number, d: number, x: number) => smooth(a, b, x) * (1 - smooth(c, d, x))
 
 // Scroll ranges per scene (percent of total scroll)
-export const SCENE_RANGES = [0, 0.15, 0.35, 0.55, 0.7, 0.85, 1.0]
-export const SCENE_JUMP = [0, 0.17, 0.38, 0.57, 0.72, 0.92]
+// 0 Außen · 1 Wand-Scan/Leckortung · 2 Bad & Sanitär · 3 Wohnraum & Möbel · 4 Balkon & Elektrik · 5 Karte & Anfrage
+export const SCENE_RANGES = [0, 0.12, 0.36, 0.55, 0.7, 0.86, 1.0]
+export const SCENE_JUMP = [0, 0.27, 0.45, 0.63, 0.77, 0.94]
 export const sceneOf = (p: number) => {
   for (let i = 0; i < 6; i++) if (p < SCENE_RANGES[i + 1]) return i
   return 5

@@ -11,21 +11,21 @@ export const FIRMA = {
 }
 
 export const SCENES = [
-  { id: 'aussen', hud: 'Außenansicht', color: '#F8FAFC' },
-  { id: 'wand', hud: 'Blick in die Wand', color: '#EF4444' },
-  { id: 'sanitaer', hud: 'Bad & Sanitär', color: '#38BDF8' },
-  { id: 'leck', hud: 'Leckortung', color: '#0EA5E9' },
-  { id: 'reno', hud: 'Renovierung & Balkon', color: '#FACC15' },
-  { id: 'anfrage', hud: 'Anfrage', color: '#FF5722' },
+  { id: 'aussen', hud: 'Das Haus', color: '#FFFFFF' },
+  { id: 'wand', hud: 'Wand-Scan · Leckortung', color: '#EF4444' },
+  { id: 'bad', hud: 'Bad & Sanitär', color: '#0EA5E9' },
+  { id: 'wohnen', hud: 'Wohnraum & Möbel', color: '#FFFFFF' },
+  { id: 'balkon', hud: 'Balkon & Elektrik', color: '#0EA5E9' },
+  { id: 'anfrage', hud: '100 km · Anfrage', color: '#0EA5E9' },
 ]
 
 export const SERVICES = [
-  { id: 'sanitaer', label: 'Sanitär', icon: 'Droplets' },
-  { id: 'leck', label: 'Leckortung', icon: 'ScanSearch' },
+  { id: 'leck', label: 'Leckortung / Wand-Check', icon: 'ScanSearch' },
   { id: 'bad', label: 'Badsanierung', icon: 'Bath' },
+  { id: 'sanitaer', label: 'Sanitär', icon: 'Droplets' },
+  { id: 'moebel', label: 'Möbel demontieren/montieren', icon: 'Hammer' },
   { id: 'balkon', label: 'Balkonsanierung', icon: 'Fence' },
   { id: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller' },
-  { id: 'moebel', label: 'Möbel demontieren', icon: 'Hammer' },
   { id: 'elektrik', label: 'Elektrik / Montage', icon: 'Zap' },
 ] as const
 

@@ -1,14 +1,14 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, Sky, Sparkles } from '@react-three/drei'
-import { Bloom, EffectComposer, N8AO, ChromaticAberration, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
-import { BlendFunction, ToneMappingMode } from 'postprocessing'
+import { Bloom, DepthOfField, EffectComposer, N8AO, ChromaticAberration, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
+import { BlendFunction, ToneMappingMode, type DepthOfFieldEffect } from 'postprocessing'
 import { Vector2 } from 'three'
 import { PCFSoftShadowMap, type Group } from 'three'
 import { useRef } from 'react'
 import { S, smooth } from '../state'
 import { HouseScene } from './HouseScene'
-import { CameraRig } from './CameraRig'
+import { CameraRig, FOCUS } from './CameraRig'
 import { ServiceRadiusMap, MAP_Y } from './ServiceRadiusMap'
 
 function LiteSky() {
@@ -52,7 +52,7 @@ function Stage() {
       <group ref={houseRef}><HouseScene /></group>
       <group ref={mapRef}><ServiceRadiusMap /></group>
       <Sparkles count={S.mobile ? 50 : 140} scale={[16, 9, 16]} position={[0, 3.5, 0]} size={2.2} speed={0.25} opacity={0.5} color="#7fb8e8" />
-      <Sparkles count={S.mobile ? 20 : 60} scale={[12, 6, 12]} position={[0, MAP_Y + 3, 0]} size={2} speed={0.2} opacity={0.5} color="#ff8a5a" />
+      <Sparkles count={S.mobile ? 20 : 60} scale={[12, 6, 12]} position={[0, MAP_Y + 3, 0]} size={2} speed={0.2} opacity={0.5} color="#bfe6ff" />
       <SceneFog />
     </>
   )
@@ -67,7 +67,14 @@ function SceneFog() {
   return null
 }
 
+/** Tiefenunschärfe: Fokus folgt dem Blickpunkt der Kamerafahrt */
+function FocusPull({ dof }: { dof: React.RefObject<DepthOfFieldEffect | null> }) {
+  useFrame(({ camera }) => { if (dof.current) dof.current.cocMaterial.focusDistance = camera.position.distanceTo(FOCUS) })
+  return null
+}
+
 export function Experience() {
+  const dof = useRef<DepthOfFieldEffect>(null)
   const [ready, setReady] = useState(false)
   useEffect(() => setReady(true), [])
   if (!ready) return null
@@ -83,9 +90,11 @@ export function Experience() {
         <Lights />
         <Stage />
         <CameraRig />
+        {!S.mobile && <FocusPull dof={dof} />}
       </Suspense>
       <EffectComposer multisampling={S.mobile ? 0 : 4}>
         {!S.mobile && <N8AO aoRadius={0.7} distanceFalloff={1.2} intensity={2.2} quality="medium" color="#0b1018" />}
+        {!S.mobile ? <DepthOfField ref={dof} focusDistance={8} focusRange={5} bokehScale={2.2} /> : <></>}
         <Bloom intensity={S.mobile ? 0.35 : 0.5} luminanceThreshold={1.0} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
         <ToneMapping mode={ToneMappingMode.AGX} />
         <ChromaticAberration offset={new Vector2(0.0006, 0.0006)} radialModulation modulationOffset={0.3} blendFunction={BlendFunction.NORMAL} />
