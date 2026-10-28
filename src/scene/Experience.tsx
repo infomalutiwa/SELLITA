@@ -1,6 +1,6 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
-import { Environment, Sparkles } from '@react-three/drei'
+import { Environment, Lightformer, Sky, Sparkles } from '@react-three/drei'
 import { Bloom, EffectComposer, N8AO, ChromaticAberration, Noise, ToneMapping, Vignette } from '@react-three/postprocessing'
 import { BlendFunction, ToneMappingMode } from 'postprocessing'
 import { Vector2 } from 'three'
@@ -11,14 +11,30 @@ import { HouseScene } from './HouseScene'
 import { CameraRig } from './CameraRig'
 import { ServiceRadiusMap, MAP_Y } from './ServiceRadiusMap'
 
+function LiteSky() {
+  const ref = useRef<Group>(null)
+  useFrame(() => { if (ref.current) ref.current.visible = S.free || S.p < 0.88 })
+  return <group ref={ref}><Sky distance={4500} sunPosition={[-40, 6, 60]} turbidity={6} rayleigh={1.6} mieCoefficient={0.006} mieDirectionalG={0.9} /></group>
+}
+
 function Lights() {
   return (
     <>
       <ambientLight intensity={0.12} color="#b6c4d8" />
       <directionalLight position={[-9, 7, 10]} intensity={2.0} color="#ffc99a" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.03} />
       <directionalLight position={[10, 4, -6]} intensity={0.5} color="#7aa7ff" />
-      {/* Fotografische HDRI (Poly Haven, CC0): Licht, Reflexionen und Hintergrund */}
-      <Environment files="/ph/hdr/qwantani_dusk_2_puresky.hdr" background backgroundBlurriness={0.02} environmentIntensity={0.9} />
+      {import.meta.env.VITE_LITE ? (
+        <>
+          <LiteSky />
+          <Environment resolution={256} environmentIntensity={0.9}>
+            <Lightformer form="rect" intensity={2.2} color="#ffc99a" position={[-6, 5, 8]} scale={[10, 6, 1]} />
+            <Lightformer form="rect" intensity={1.2} color="#9bb8e8" position={[8, 4, -6]} scale={[10, 5, 1]} />
+            <Lightformer form="rect" intensity={0.8} color="#b6c4d8" position={[0, 9, 0]} rotation-x={Math.PI / 2} scale={[14, 14, 1]} />
+          </Environment>
+        </>
+      ) : (
+        <Environment files="ph/hdr/qwantani_dusk_2_puresky.hdr" background backgroundBlurriness={0.02} environmentIntensity={0.9} />
+      )}
     </>
   )
 }

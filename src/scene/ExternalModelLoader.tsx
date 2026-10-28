@@ -29,7 +29,7 @@ export type ModelProps = {
   shadows?: boolean
 }
 
-const resolve = (file: string) => (file.startsWith('ph:') ? `/ph/models/${file.slice(3)}/${file.slice(3)}.gltf` : `/models/${file}`)
+const resolve = (file: string) => (file.startsWith('ph:') ? `ph/models/${file.slice(3)}/${file.slice(3)}.gltf` : `models/${file}`)
 
 function Model({ file, height, length, position, rotation, tint, tintOnly, roughness, metalness, align = true, shadows = true }: ModelProps) {
   const { scene } = useGLTF(resolve(file))
@@ -70,8 +70,8 @@ function Model({ file, height, length, position, rotation, tint, tintOnly, rough
 let manifest: Promise<string[]> | null = null
 const loadManifest = () =>
   (manifest ??= Promise.all([
-    fetch('/models/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
-    fetch('/ph/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
+    fetch('models/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
+    fetch('ph/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
   ]).then(([a, b]) => [
     ...(a.models ?? []),
     ...(b.models ?? []).map((m) => `ph:${m}`),
