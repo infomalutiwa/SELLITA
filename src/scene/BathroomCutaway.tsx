@@ -78,7 +78,7 @@ export function BathroomCutaway() {
     const kt = clamp01((b - 0.5) / 0.2)
     if (tub.current) { tub.current.visible = kt > 0; tub.current.position.y = 2.72 + (1 - bounce(kt)) * 3.2 }
     const kb = clamp01((b - 0.6) / 0.18)
-    if (basin.current) { basin.current.visible = kb > 0; basin.current.position.x = 1.3 - (1 - ease(kb)) * 3.5 }
+    if (basin.current) { basin.current.visible = kb > 0; basin.current.position.x = 1.6 - (1 - ease(kb)) * 3.5 }
     const kg = clamp01((b - 0.7) / 0.16)
     if (glass.current) { glass.current.visible = kg > 0; glass.current.position.y = 2.72 + (1 - ease(kg)) * 2.5 }
     const ks = clamp01((b - 0.78) / 0.12)
@@ -118,30 +118,30 @@ export function BathroomCutaway() {
         ))}
       </group>
 
-      {/* Freistehende Badewanne */}
-      <group ref={tub} position={[1.3, 2.72, 0.4]} visible={false}>
-        <mesh geometry={latheGeo} scale={[1, 1, 2.0]} rotation={[0, 0, 0]}>
-          <meshPhysicalMaterial color="#ffffff" roughness={0.1} clearcoat={1} side={2} />
-        </mesh>
-        <mesh position={[0, 0.4, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 2.0, 1]}>
-          <circleGeometry args={[0.37, 40]} /><meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.6} transparent opacity={0.75} />
-        </mesh>
-        {[[-0.25, -0.5], [0.25, -0.5], [-0.25, 0.5], [0.25, 0.5]].map(([x, z], i) => (
-          <mesh key={i} position={[x, 0.03, z]}><cylinderGeometry args={[0.03, 0.03, 0.08, 10]} /><meshStandardMaterial color="#cbd5e1" metalness={1} roughness={0.2} /></mesh>
-        ))}
-        <mesh position={[0, 0.55, -0.82]}><cylinderGeometry args={[0.018, 0.018, 0.55, 10]} /><meshStandardMaterial color="#e2e8f0" metalness={1} roughness={0.15} /></mesh>
+      {/* Freistehende Badewanne (Kenney CC0, Fallback: Lathe-Mesh) */}
+      <group ref={tub} position={[1.5, 2.72, 0.3]} visible={false}>
+        <ExternalModelLoader file="bathtub.glb" length={1.8} rotation={[0, Math.PI / 2, 0]} roughness={0.12}
+          fallback={
+            <group>
+              <mesh geometry={latheGeo} scale={[1, 1, 2.0]}><meshPhysicalMaterial color="#ffffff" roughness={0.1} clearcoat={1} side={2} /></mesh>
+              <mesh position={[0, 0.4, 0]} rotation={[-Math.PI / 2, 0, 0]} scale={[1, 2.0, 1]}><circleGeometry args={[0.37, 40]} /><meshStandardMaterial color="#38bdf8" emissive="#0ea5e9" emissiveIntensity={0.6} transparent opacity={0.75} /></mesh>
+            </group>
+          } />
       </group>
 
-      {/* Waschtisch */}
-      <group ref={basin} position={[1.3, 0, -1.6]} visible={false}>
-        <mesh position={[0, 3.2, 0]}><boxGeometry args={[0.9, 0.38, 0.42]} /><meshStandardMaterial color="#2a3139" roughness={0.45} /></mesh>
-        <mesh position={[0, 3.45, 0.02]}><boxGeometry args={[0.92, 0.06, 0.46]} /><meshPhysicalMaterial color="#ffffff" roughness={0.1} clearcoat={1} /></mesh>
-        <mesh position={[0, 3.5, 0.03]}><cylinderGeometry args={[0.2, 0.15, 0.1, 28]} /><meshPhysicalMaterial color="#ffffff" roughness={0.1} clearcoat={1} /></mesh>
-        <mesh position={[0, 3.62, -0.15]}><cylinderGeometry args={[0.015, 0.015, 0.2, 10]} /><meshStandardMaterial color="#e2e8f0" metalness={1} roughness={0.15} /></mesh>
-        <mesh position={[0, 4.05, -0.22]}><boxGeometry args={[0.8, 0.7, 0.03]} /><meshStandardMaterial color="#dbeafe" metalness={1} roughness={0.05} emissive="#38bdf8" emissiveIntensity={0.25} /></mesh>
-        <ExternalModelLoader file="WaterBottle.glb" position={[0.32, 3.5, -0.05]} scale={1.1} fallback={
-          <mesh position={[0.32, 3.55, -0.05]}><cylinderGeometry args={[0.04, 0.04, 0.16, 12]} /><meshPhysicalMaterial color="#7dd3fc" transmission={0.6} roughness={0.1} /></mesh>
-        } />
+      {/* Waschtisch + Spiegel + Unterschrank + WC */}
+      <group ref={basin} position={[1.6, 0, -1.6]} visible={false}>
+        <ExternalModelLoader file="bathroomSink.glb" height={1.0} position={[0, 2.72, 0.08]}
+          fallback={
+            <group>
+              <mesh position={[0, 3.2, 0]}><boxGeometry args={[0.9, 0.38, 0.42]} /><meshStandardMaterial color="#2a3139" roughness={0.45} /></mesh>
+              <mesh position={[0, 3.45, 0.02]}><boxGeometry args={[0.92, 0.06, 0.46]} /><meshPhysicalMaterial color="#ffffff" roughness={0.1} clearcoat={1} /></mesh>
+            </group>
+          } />
+        <ExternalModelLoader file="bathroomMirror.glb" height={0.95} position={[0, 3.85, -0.2]} roughness={0.05} metalness={0.6} />
+        <ExternalModelLoader file="bathroomCabinetDrawer.glb" height={0.82} position={[-0.62, 2.72, 0.15]} tint="#e8eef5" />
+        <ExternalModelLoader file="toilet.glb" height={0.85} position={[-0.7, 2.72, 2.95]} rotation={[0, Math.PI / 2 + 0.0, 0]} />
+        <mesh position={[0, 4.3, -0.22]}><boxGeometry args={[0.8, 0.02, 0.03]} /><meshBasicMaterial color="#9ad8ff" toneMapped={false} /></mesh>
       </group>
 
       {/* Walk-In-Dusche */}

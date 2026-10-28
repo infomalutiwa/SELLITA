@@ -1,1 +1,21 @@
-{ "models": [] }
+{
+  "license": "CC0-1.0 (Kenney Furniture Kit, kenney.nl)",
+  "models": [
+    "bathtub.glb",
+    "bathroomSink.glb",
+    "toilet.glb",
+    "showerRound.glb",
+    "bathroomMirror.glb",
+    "bathroomCabinetDrawer.glb",
+    "washer.glb",
+    "dryer.glb",
+    "loungeDesignSofa.glb",
+    "loungeSofa.glb",
+    "tableCoffee.glb",
+    "rugRectangle.glb",
+    "lampRoundFloor.glb",
+    "lampSquareFloor.glb",
+    "pottedPlant.glb",
+    "bookcaseClosed.glb"
+  ]
+}

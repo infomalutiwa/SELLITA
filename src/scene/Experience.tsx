@@ -1,8 +1,9 @@
 import { Suspense, useEffect, useState } from 'react'
 import { Canvas, useFrame } from '@react-three/fiber'
 import { Environment, Lightformer, Sparkles } from '@react-three/drei'
-import { Bloom, EffectComposer, Vignette } from '@react-three/postprocessing'
-import { ACESFilmicToneMapping, Color, type Group } from 'three'
+import { Bloom, EffectComposer, ToneMapping, Vignette } from '@react-three/postprocessing'
+import { ToneMappingMode } from 'postprocessing'
+import { ACESFilmicToneMapping, Color, PCFSoftShadowMap, type Group } from 'three'
 import { useRef } from 'react'
 import { S } from '../state'
 import { HouseScene } from './HouseScene'
@@ -14,7 +15,7 @@ function Lights() {
     <>
       <ambientLight intensity={0.5} color="#b6c4d8" />
       <hemisphereLight args={['#9fb4d0', '#1e242b', 0.55]} />
-      <directionalLight position={[8, 12, 9]} intensity={2.1} color="#fff3e6" />
+      <directionalLight position={[8, 12, 9]} intensity={2.1} color="#fff3e6" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0004} shadow-normalBias={0.03} />
       <directionalLight position={[-9, 5, -6]} intensity={0.9} color="#5aa9ff" />
       <Environment resolution={128} frames={1}>
         <Lightformer form="rect" intensity={2.2} position={[0, 6, 6]} scale={[12, 4, 1]} color="#ffffff" />
@@ -59,6 +60,7 @@ export function Experience() {
   return (
     <Canvas
       dpr={[1, 2]}
+      shadows={{ type: PCFSoftShadowMap }}
       camera={{ position: [9.5, 4.8, 13.5], fov: 42, near: 0.1, far: 200 }}
       gl={{ antialias: true, powerPreference: 'high-performance', toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.1 }}
       style={{ position: 'fixed', inset: 0, zIndex: 0 }}
@@ -69,8 +71,9 @@ export function Experience() {
         <Stage />
         <CameraRig />
       </Suspense>
-      <EffectComposer multisampling={0}>
+      <EffectComposer multisampling={S.mobile ? 0 : 4}>
         <Bloom intensity={S.mobile ? 0.7 : 0.95} luminanceThreshold={0.75} luminanceSmoothing={0.25} mipmapBlur radius={0.7} />
+        <ToneMapping mode={ToneMappingMode.AGX} />
         <Vignette eskil={false} offset={0.2} darkness={0.7} />
       </EffectComposer>
     </Canvas>

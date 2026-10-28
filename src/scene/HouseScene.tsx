@@ -10,6 +10,9 @@ import { PipeNetwork } from './PipeNetwork'
 import { Technik } from './Technik'
 import { BathroomCutaway } from './BathroomCutaway'
 import { LeakScanner } from './LeakScanner'
+import { ExternalModelLoader } from './ExternalModelLoader'
+import { Exterior, SolarPanels } from './Exterior'
+import { plasterBump, roofTextures, woodTexture } from './textures'
 
 type Hole = [cx: number, y: number, w: number, h: number]
 
@@ -53,14 +56,17 @@ const SIDE_HOLES: Hole[] = [[0.0, 0.9, 1.0, 1.2], [0.0, 3.3, 1.0, 1.2]]
 export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   const group = useRef<Group>(null)
   const m = useMemo(() => {
-    const wall = new MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.6, transparent: true })
+    const wall = new MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.7, transparent: true, bumpMap: plasterBump(), bumpScale: 0.6 })
     const slab = new MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.7, transparent: true })
-    const roof = new MeshStandardMaterial({ color: '#46505c', roughness: 0.5, metalness: 0.2, transparent: true, side: DoubleSide })
+    const rt = roofTextures()
+    const roof = new MeshStandardMaterial({ color: '#ffffff', map: rt.map, bumpMap: rt.bump, bumpScale: 2.2, roughness: 0.55, metalness: 0.15, transparent: true, side: DoubleSide })
+    const wood = new MeshStandardMaterial({ map: woodTexture(), roughness: 0.55, transparent: true })
+    const frame = new MeshStandardMaterial({ color: '#f8fafc', roughness: 0.35, transparent: true })
     const glass = new MeshStandardMaterial({ color: '#ffd9a0', emissive: new Color('#ffb25a'), emissiveIntensity: 1.6, transparent: true, toneMapped: false })
     const door = new MeshStandardMaterial({ color: '#ef4444', roughness: 0.4, transparent: true })
     const edge = new LineBasicMaterial({ color: '#38bdf8', transparent: true, opacity: 0, toneMapped: false })
     const edgeRoof = new LineBasicMaterial({ color: '#ff7a5a', transparent: true, opacity: 0, toneMapped: false })
-    return { wall, slab, roof, glass, door, edge, edgeRoof }
+    return { wall, slab, roof, glass, door, edge, edgeRoof, wood, frame }
   }, [])
   const roofEdges = useMemo(() => new EdgesGeometry(wallGeometry(7.0, 2.92, []), 30), [])
   const gable = useMemo(() => {
@@ -84,6 +90,8 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
     m.glass.opacity = 0.95 - 0.7 * x
     m.glass.emissiveIntensity = (0.5 + 1.3 * S.ren) * (1 - 0.85 * x)
     m.door.opacity = 1 - 0.8 * x
+    m.wood.opacity = 1 - 0.35 * x
+    m.frame.opacity = 1 - 0.7 * x
     m.edge.opacity = 0.85 * x
     m.edgeRoof.opacity = 0.7 * x
     if (group.current && interactive && !S.free) {
@@ -97,7 +105,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   return (
     <group ref={group}>
       {/* Plinth with red/blue brand ring */}
-      <mesh position={[0, -0.14, 0]}>
+      <mesh position={[0, -0.14, 0]} receiveShadow>
         <cylinderGeometry args={[5.8, 6.0, 0.28, 64]} />
         <meshStandardMaterial color="#1e242b" roughness={0.8} metalness={0.3} />
       </mesh>
@@ -119,17 +127,33 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       {([[-2.0, 1.5, 1.2, 1.2], [2.0, 1.5, 1.6, 1.2], [-1.8, 3.8, 1.4, 2.1], [1.8, 4.0, 1.2, 1.2]] as const).map(([x, y, w, h], i) => (
         <mesh key={i} position={[x, y, 2.0]} material={m.glass}><planeGeometry args={[w, h]} /></mesh>
       ))}
+      {([[-2.0, 1.5, 1.2, 1.2], [2.0, 1.5, 1.6, 1.2], [-1.8, 3.8, 1.4, 2.1], [1.8, 4.0, 1.2, 1.2]] as const).map(([x, y, w, h], i) => (
+        <group key={`f${i}`} position={[x, y, 2.04]}>
+          <mesh position={[0, h / 2, 0]} material={m.frame}><boxGeometry args={[w + 0.12, 0.07, 0.1]} /></mesh>
+          <mesh position={[0, -h / 2, 0.02]} material={m.frame}><boxGeometry args={[w + 0.2, 0.07, 0.16]} /></mesh>
+          <mesh position={[-w / 2, 0, 0]} material={m.frame}><boxGeometry args={[0.07, h, 0.1]} /></mesh>
+          <mesh position={[w / 2, 0, 0]} material={m.frame}><boxGeometry args={[0.07, h, 0.1]} /></mesh>
+          <mesh material={m.frame}><boxGeometry args={[0.04, h, 0.06]} /></mesh>
+          {h < 1.5 && <mesh material={m.frame}><boxGeometry args={[w, 0.04, 0.06]} /></mesh>}
+        </group>
+      ))}
       <mesh position={[0, 1.05, 2.0]} material={m.door}><boxGeometry args={[1.0, 2.1, 0.08]} /></mesh>
+      <mesh position={[0.34, 1.0, 2.07]}><boxGeometry args={[0.04, 0.3, 0.04]} /><meshStandardMaterial color="#e2e8f0" metalness={1} roughness={0.2} /></mesh>
+      <mesh position={[0, 2.25, 2.1]}><boxGeometry args={[1.5, 0.06, 0.4]} /><meshStandardMaterial color="#1e242b" roughness={0.5} /></mesh>
+      <mesh position={[1.0, 1.5, 2.1]}><boxGeometry args={[0.3, 0.2, 0.03]} /><meshStandardMaterial color="#1e242b" /></mesh>
       {/* Floors / ceiling */}
-      <mesh position={[0, 0.1, 0]} material={m.slab}><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
-      <mesh position={[0, 2.6, 0]} material={m.slab}><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
+      <mesh position={[0, 0.1, 0]} material={m.slab} receiveShadow><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
+      <mesh position={[0, 2.6, 0]} material={m.slab} receiveShadow><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
+      <mesh position={[-1.35, 2.705, 0]} rotation={[-Math.PI / 2, 0, 0]} material={m.wood} receiveShadow><planeGeometry args={[3.6, 3.8]} /></mesh>
+      <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[6.2, 3.8]} /><meshStandardMaterial color="#cbd5e1" roughness={0.35} metalness={0.1} /></mesh>
       <mesh position={[0, 5.2, 0]} material={m.slab}><boxGeometry args={[6.4, 0.1, 4]} /></mesh>
       <mesh position={[0.6, 3.9, 0]} material={m.slab}><boxGeometry args={[0.12, 2.5, 3.8]} /></mesh>
 
       {/* Satteldach */}
       {[1, -1].map((s) => (
         <group key={s} position={[0, 6.1, 1.15 * s]} rotation={[roofAngle * s, 0, 0]}>
-          <mesh material={m.roof}><boxGeometry args={[7.0, 0.14, 2.92]} /></mesh>
+          <mesh material={m.roof} castShadow><boxGeometry args={[7.0, 0.14, 2.92]} /></mesh>
+          {s === 1 && <SolarPanels />}
           <lineSegments geometry={roofEdges} material={m.edgeRoof} rotation={[Math.PI / 2, 0, 0]} position={[0, 0, 0]} />
         </group>
       ))}
@@ -137,6 +161,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
         <mesh key={x} geometry={gable} position={[x, 5.25, 0]} rotation={[0, Math.PI / 2, 0]} material={m.wall} />
       ))}
 
+      <Exterior />
       <Balcony />
       <Interior />
       <Technik />
@@ -197,16 +222,23 @@ function Balcony() {
   )
 }
 
-/* ---------- Wohnbereich: Möbel ---------- */
+/* ---------- Wohnbereich: CC0-Möbel (Kenney Furniture Kit), prozeduraler Fallback ---------- */
 function Interior() {
+  const Y = 2.72
   return (
     <group>
-      {/* Sofa + Teppich im Obergeschoss links */}
-      <mesh position={[-1.8, 2.75, -1.1]}><boxGeometry args={[2.0, 0.4, 0.8]} /><meshStandardMaterial color="#334155" roughness={0.9} /></mesh>
-      <mesh position={[-1.8, 3.1, -1.45]}><boxGeometry args={[2.0, 0.5, 0.18]} /><meshStandardMaterial color="#334155" roughness={0.9} /></mesh>
-      <mesh position={[-1.8, 2.71, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[2.6, 1.6]} /><meshStandardMaterial color="#64748b" roughness={1} /></mesh>
-      <mesh position={[-3.0, 3.6, -1.5]}><cylinderGeometry args={[0.02, 0.02, 1.8, 8]} /><meshStandardMaterial color="#cbd5e1" /></mesh>
-      <mesh position={[-3.0, 4.6, -1.5]}><sphereGeometry args={[0.16, 16, 16]} /><meshBasicMaterial color="#fff1c9" toneMapped={false} /></mesh>
+      <ExternalModelLoader file="rugRectangle.glb" length={2.6} position={[-1.7, Y, -0.1]} tint="#9fb4cc"
+        fallback={<mesh position={[-1.8, Y, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[2.6, 1.6]} /><meshStandardMaterial color="#64748b" roughness={1} /></mesh>} />
+      <ExternalModelLoader file="loungeDesignSofa.glb" length={2.3} position={[-1.8, Y, -1.45]} tint="#cfd8e6"
+        fallback={<mesh position={[-1.8, 2.95, -1.2]}><boxGeometry args={[2.0, 0.5, 0.8]} /><meshStandardMaterial color="#334155" roughness={0.9} /></mesh>} />
+      <ExternalModelLoader file="tableCoffee.glb" length={1.05} position={[-1.7, Y, -0.35]} />
+      <ExternalModelLoader file="lampRoundFloor.glb" height={1.75} position={[-3.0, Y, -1.55]}
+        fallback={<mesh position={[-3.0, 4.6, -1.5]}><sphereGeometry args={[0.16, 16, 16]} /><meshBasicMaterial color="#fff1c9" toneMapped={false} /></mesh>} />
+      <ExternalModelLoader file="pottedPlant.glb" height={1.15} position={[-0.4, Y, -1.5]} />
+      <ExternalModelLoader file="bookcaseClosed.glb" height={1.75} position={[-3.0, Y, 0.9]} rotation={[0, Math.PI / 2, 0]} tint="#d9c4a8" />
+      {/* Waschmaschine + Trockner im Technikraum */}
+      <ExternalModelLoader file="washer.glb" height={0.88} position={[-0.05, 0.2, -1.5]} />
+      <ExternalModelLoader file="dryer.glb" height={0.88} position={[0.6, 0.2, -1.5]} />
     </group>
   )
 }
