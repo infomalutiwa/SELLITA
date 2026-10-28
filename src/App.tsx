@@ -4,6 +4,8 @@ import gsap from 'gsap'
 import { ScrollTrigger } from 'gsap/ScrollTrigger'
 import { Component, type ReactNode } from 'react'
 import { Orbit, Phone, ScanEye, X } from 'lucide-react'
+import { useProgress } from '@react-three/drei'
+import { AnimatePresence, motion } from 'framer-motion'
 import { Experience } from './scene/Experience'
 import { Overlay } from './ui/Overlay'
 import { HudNav } from './ui/HudNav'
@@ -63,6 +65,7 @@ export default function App() {
   return (
     <>
       <GLBoundary><Experience /></GLBoundary>
+      <Loader />
       <div id="scroll" style={{ height: '800vh' }} aria-hidden />
 
       <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between p-4 md:px-8">
@@ -103,4 +106,23 @@ function ProgressBar() {
     return () => cancelAnimationFrame(raf)
   }, [])
   return <div className="fixed inset-x-0 top-0 z-40 h-[3px] bg-white/5"><div ref={ref} className="h-full origin-left bg-gradient-to-r from-[#ff5722] via-[#ef4444] to-[#38bdf8]" style={{ transform: 'scaleX(0)' }} /></div>
+}
+
+function Loader() {
+  const { progress, active } = useProgress()
+  const [done, setDone] = useState(false)
+  useEffect(() => { if (!active && progress >= 100) { const t = setTimeout(() => setDone(true), 500); return () => clearTimeout(t) } }, [active, progress])
+  return (
+    <AnimatePresence>
+      {!done && (
+        <motion.div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#0f141c]" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
+          <Logo big />
+          <div className="h-[3px] w-56 overflow-hidden rounded-full bg-white/10">
+            <div className="h-full bg-gradient-to-r from-[#ff5722] to-[#38bdf8] transition-all" style={{ width: `${Math.max(4, progress)}%` }} />
+          </div>
+          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Haus wird aufgebaut · {Math.round(progress)}%</p>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  )
 }

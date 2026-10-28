@@ -25,22 +25,27 @@ export type ModelProps = {
   metalness?: number
   /** Mittelpunkt auf (0,0) im Grundriss und Unterkante auf y=0 */
   align?: boolean
+  /** wirft Schatten (Standard: ja) */
+  shadows?: boolean
 }
 
-function Model({ file, height, length, position, rotation, tint, tintOnly, roughness, metalness, align = true }: ModelProps) {
-  const { scene } = useGLTF(`/models/${file}`)
+const resolve = (file: string) => (file.startsWith('ph:') ? `/ph/models/${file.slice(3)}/${file.slice(3)}.gltf` : `/models/${file}`)
+
+function Model({ file, height, length, position, rotation, tint, tintOnly, roughness, metalness, align = true, shadows = true }: ModelProps) {
+  const { scene } = useGLTF(resolve(file))
   const obj = useMemo(() => {
     const c = scene.clone(true)
     const seen = new Map<Material, Material>()
     c.traverse((o) => {
       const m = o as Mesh
       if (!m.isMesh) return
-      m.castShadow = true
+      m.castShadow = shadows
       m.receiveShadow = true
       const mat = m.material as MeshStandardMaterial
       if (!seen.has(mat)) {
         const k = mat.clone() as MeshStandardMaterial
         k.envMapIntensity = 1.1
+        if (k.map) k.map.anisotropy = 8
         if (tint && (!tintOnly || k.name.toLowerCase().includes(tintOnly.toLowerCase()))) k.color.multiply(new Color(tint))
         if (roughness !== undefined) k.roughness = roughness
         if (metalness !== undefined) k.metalness = metalness
@@ -64,10 +69,13 @@ function Model({ file, height, length, position, rotation, tint, tintOnly, rough
 
 let manifest: Promise<string[]> | null = null
 const loadManifest = () =>
-  (manifest ??= fetch('/models/manifest.json')
-    .then((r) => (r.ok ? r.json() : { models: [] }))
-    .then((j) => (Array.isArray(j.models) ? (j.models as string[]) : []))
-    .catch(() => []))
+  (manifest ??= Promise.all([
+    fetch('/models/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
+    fetch('/ph/manifest.json').then((r) => (r.ok ? r.json() : {})).catch(() => ({})) as Promise<{ models?: string[] }>,
+  ]).then(([a, b]) => [
+    ...(a.models ?? []),
+    ...(b.models ?? []).map((m) => `ph:${m}`),
+  ]))
 
 /**
  * Lädt ein Open-Source-.glb aus /public/models (siehe `npm run assets`), richtet es automatisch aus

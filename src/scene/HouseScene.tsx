@@ -1,5 +1,5 @@
 import { useMemo, useRef } from 'react'
-import { MeshReflectorMaterial, Sparkles } from '@react-three/drei'
+import { Sparkles } from '@react-three/drei'
 import { useFrame } from '@react-three/fiber'
 import {
   Color, DoubleSide, EdgesGeometry, ExtrudeGeometry, LineBasicMaterial, MeshPhysicalMaterial, MeshStandardMaterial, Path, Shape,
@@ -14,7 +14,7 @@ import { BathroomCutaway } from './BathroomCutaway'
 import { LeakScanner } from './LeakScanner'
 import { ExternalModelLoader } from './ExternalModelLoader'
 import { Exterior, SolarPanels } from './Exterior'
-import { plasterBump, roofTextures, woodTexture } from './textures'
+import { usePbr } from './pbr'
 
 type Hole = [cx: number, y: number, w: number, h: number]
 
@@ -57,19 +57,24 @@ const SIDE_HOLES: Hole[] = [[0.0, 0.9, 1.0, 1.2], [0.0, 3.3, 1.0, 1.2]]
 
 export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   const group = useRef<Group>(null)
+  const plaster = usePbr('white_plaster_02', [0.5, 0.5])
+  const roofP = usePbr('grey_roof_tiles_02', [3.5, 1.4])
+  const woodP = usePbr('oak_wood_planks', [1.8, 1.9])
+  const concreteP = usePbr('concrete_floor_01', [1.5, 1])
   const m = useMemo(() => {
-    const wall = new MeshStandardMaterial({ color: '#f1f5f9', roughness: 0.7, transparent: true, bumpMap: plasterBump(), bumpScale: 0.6 })
-    const slab = new MeshStandardMaterial({ color: '#e2e8f0', roughness: 0.7, transparent: true })
-    const rt = roofTextures()
-    const roof = new MeshStandardMaterial({ color: '#ffffff', map: rt.map, bumpMap: rt.bump, bumpScale: 2.2, roughness: 0.55, metalness: 0.15, transparent: true, side: DoubleSide })
-    const wood = new MeshStandardMaterial({ map: woodTexture(), roughness: 0.55, transparent: true })
-    const frame = new MeshStandardMaterial({ color: '#f8fafc', roughness: 0.35, transparent: true })
-    const glass = new MeshStandardMaterial({ color: '#ffd9a0', emissive: new Color('#ffb25a'), emissiveIntensity: 1.6, transparent: true, toneMapped: false })
-    const door = new MeshStandardMaterial({ color: '#ef4444', roughness: 0.4, transparent: true })
+    const wall = new MeshStandardMaterial({ ...plaster, color: '#f4f1ec', transparent: true })
+    const slab = new MeshStandardMaterial({ ...concreteP, color: '#e8e8e8', transparent: true })
+    const roof = new MeshStandardMaterial({ ...roofP, color: '#ffffff', transparent: true, side: DoubleSide })
+    const wood = new MeshStandardMaterial({ ...woodP, color: '#ffffff', transparent: true })
+    const frame = new MeshStandardMaterial({ color: '#f1f1ef', roughness: 0.38, metalness: 0.0, transparent: true })
+    // Innenraum-Leuchtfläche hinter der Scheibe (warmes Abendlicht)
+    const glow = new MeshStandardMaterial({ color: '#ffe2b8', emissive: new Color('#ffb25a'), emissiveIntensity: 1.2, transparent: true, toneMapped: false })
+    const glass = new MeshPhysicalMaterial({ color: '#b9cde0', metalness: 0, roughness: 0.02, transparent: true, opacity: 0.22, envMapIntensity: 2.4, clearcoat: 1 })
+    const door = new MeshStandardMaterial({ color: '#2b3340', roughness: 0.35, metalness: 0.1, transparent: true })
     const edge = new LineBasicMaterial({ color: '#38bdf8', transparent: true, opacity: 0, toneMapped: false })
     const edgeRoof = new LineBasicMaterial({ color: '#ff7a5a', transparent: true, opacity: 0, toneMapped: false })
-    return { wall, slab, roof, glass, door, edge, edgeRoof, wood, frame }
-  }, [])
+    return { wall, slab, roof, glass, glow, door, edge, edgeRoof, wood, frame }
+  }, [plaster, roofP, woodP, concreteP])
   const roofEdges = useMemo(() => new EdgesGeometry(wallGeometry(7.0, 2.92, []), 30), [])
   const gable = useMemo(() => {
     const s = new Shape(); s.moveTo(-2.05, 0); s.lineTo(2.05, 0); s.lineTo(0, 1.75); s.lineTo(-2.05, 0)
@@ -77,7 +82,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   }, [])
 
   const old = useMemo(() => new Color('#9a8f80'), [])
-  const fresh = useMemo(() => new Color('#f1f5f9'), [])
+  const fresh = useMemo(() => new Color('#f4f1ec'), [])
 
   useFrame((_, dt) => {
     S.ren += (S.renTarget - S.ren) * Math.min(1, dt * 4)
@@ -85,12 +90,13 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
     m.wall.opacity = 1 - 0.9 * x
     m.wall.depthWrite = x < 0.4
     m.wall.color.copy(old).lerp(fresh, S.ren)
-    m.slab.opacity = 1 - 0.55 * x
+    m.slab.opacity = 1 - 0.5 * x
     m.slab.depthWrite = x < 0.3
     m.roof.opacity = 1 - 0.88 * x
     m.roof.depthWrite = x < 0.3
-    m.glass.opacity = 0.95 - 0.7 * x
-    m.glass.emissiveIntensity = (0.5 + 1.3 * S.ren) * (1 - 0.85 * x)
+    m.glass.opacity = 0.24 - 0.18 * x
+    m.glow.opacity = 0.95 - 0.8 * x
+    m.glow.emissiveIntensity = (0.4 + 1.0 * S.ren) * (1 - 0.85 * x)
     m.door.opacity = 1 - 0.8 * x
     m.wood.opacity = 1 - 0.35 * x
     m.frame.opacity = 1 - 0.7 * x
@@ -106,26 +112,6 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
   const roofAngle = Math.atan2(1.8, 2.3)
   return (
     <group ref={group}>
-      {/* Plinth with red/blue brand ring */}
-      <mesh position={[0, -0.14, 0]} receiveShadow>
-        <cylinderGeometry args={[5.8, 6.0, 0.28, 64]} />
-        <meshStandardMaterial color="#1e242b" roughness={0.8} metalness={0.3} />
-      </mesh>
-      <mesh position={[0, 0.0, 0]} rotation={[-Math.PI / 2, 0, Math.PI / 2]}>
-        <torusGeometry args={[5.78, 0.035, 8, 96, Math.PI]} />
-        <meshBasicMaterial color="#ff4a2a" toneMapped={false} />
-      </mesh>
-      <mesh position={[0, 0.0, 0]} rotation={[-Math.PI / 2, 0, -Math.PI / 2]}>
-        <torusGeometry args={[5.78, 0.035, 8, 96, Math.PI]} />
-        <meshBasicMaterial color="#2bb7ff" toneMapped={false} />
-      </mesh>
-
-      {!S.mobile && (
-        <mesh position={[0, -0.3, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-          <circleGeometry args={[16, 64]} />
-          <MeshReflectorMaterial resolution={512} mirror={0.55} mixBlur={8} mixStrength={5} blur={[300, 80]} color="#0c1118" roughness={1} depthScale={0.6} minDepthThreshold={0.4} maxDepthThreshold={1.2} />
-        </mesh>
-      )}
       <Sparkles count={S.mobile ? 8 : 24} scale={[1.2, 1.4, 1.8]} position={[1.5, 3.5, 0.3]} size={6} speed={0.35} opacity={0.35} color="#d8f1ff" />
       {/* Walls */}
       <Wall w={6.4} h={5.2} holes={FRONT_HOLES} pos={[0, 0, 2]} mat={m.wall} edge={m.edge} />
@@ -134,7 +120,10 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       <Wall w={4} h={5.2} holes={SIDE_HOLES} pos={[3.2, 0, 0]} rotY={Math.PI / 2} mat={m.wall} edge={m.edge} />
       {/* Windows (warm light) + door */}
       {([[-2.0, 1.5, 1.2, 1.2], [2.0, 1.5, 1.6, 1.2], [-1.8, 3.8, 1.4, 2.1], [1.8, 4.0, 1.2, 1.2]] as const).map(([x, y, w, h], i) => (
-        <mesh key={i} position={[x, y, 2.0]} material={m.glass}><planeGeometry args={[w, h]} /></mesh>
+        <group key={i}>
+          <mesh position={[x, y, 1.9]} material={m.glow}><planeGeometry args={[w, h]} /></mesh>
+          <mesh position={[x, y, 2.0]} material={m.glass}><planeGeometry args={[w, h]} /></mesh>
+        </group>
       ))}
       {([[-2.0, 1.5, 1.2, 1.2], [2.0, 1.5, 1.6, 1.2], [-1.8, 3.8, 1.4, 2.1], [1.8, 4.0, 1.2, 1.2]] as const).map(([x, y, w, h], i) => (
         <group key={`f${i}`} position={[x, y, 2.04]}>
@@ -154,7 +143,7 @@ export function HouseScene({ interactive = true }: { interactive?: boolean }) {
       <mesh position={[0, 0.1, 0]} material={m.slab} receiveShadow><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
       <mesh position={[0, 2.6, 0]} material={m.slab} receiveShadow><boxGeometry args={[6.4, 0.2, 4]} /></mesh>
       <mesh position={[-1.35, 2.705, 0]} rotation={[-Math.PI / 2, 0, 0]} material={m.wood} receiveShadow><planeGeometry args={[3.6, 3.8]} /></mesh>
-      <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[6.2, 3.8]} /><meshStandardMaterial color="#cbd5e1" roughness={0.35} metalness={0.1} /></mesh>
+      <GroundFloor />
       <mesh position={[0, 5.2, 0]} material={m.slab}><boxGeometry args={[6.4, 0.1, 4]} /></mesh>
       <mesh position={[0.6, 3.9, 0]} material={m.slab}><boxGeometry args={[0.12, 2.5, 3.8]} /></mesh>
 
@@ -203,6 +192,11 @@ function HeatLights() {
   )
 }
 
+function GroundFloor() {
+  const t = usePbr('large_floor_tiles_02', [3, 2], { metalness: 0.0 })
+  return <mesh position={[0, 0.205, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[6.2, 3.8]} /><meshStandardMaterial {...t} color="#ffffff" metalness={0} roughness={0.6} /></mesh>
+}
+
 /* ---------- Balkon (neuer Boden, Abdichtung, Geländer) ---------- */
 function Balcony() {
   const top = useRef<MeshStandardMaterial>(null)
@@ -234,26 +228,25 @@ function Balcony() {
   )
 }
 
-/* ---------- Wohnbereich: CC0-Möbel (Kenney Furniture Kit), prozeduraler Fallback ---------- */
+/* ---------- Wohnbereich: fotogescannte Möbel (Poly Haven, CC0) ---------- */
 function Interior() {
   const Y = 2.72
+  const wool = usePbr('wool_boucle', [2, 1.5], { metalness: 0 })
   return (
     <group>
-      <ExternalModelLoader file="rugRectangle.glb" length={2.6} position={[-1.7, Y, -0.1]} tint="#9fb4cc"
-        fallback={<mesh position={[-1.8, Y, 0]} rotation={[-Math.PI / 2, 0, 0]}><planeGeometry args={[2.6, 1.6]} /><meshStandardMaterial color="#64748b" roughness={1} /></mesh>} />
-      <ExternalModelLoader file="loungeDesignSofa.glb" length={2.3} position={[-1.8, Y, -1.45]} tint="#cfd8e6"
-        fallback={<mesh position={[-1.8, 2.95, -1.2]}><boxGeometry args={[2.0, 0.5, 0.8]} /><meshStandardMaterial color="#334155" roughness={0.9} /></mesh>} />
-      <ExternalModelLoader file="tableCoffee.glb" length={1.05} position={[-1.7, Y, -0.35]} />
-      <ExternalModelLoader file="lampRoundFloor.glb" height={1.75} position={[-3.0, Y, -1.55]}
-        fallback={<mesh position={[-3.0, 4.6, -1.5]}><sphereGeometry args={[0.16, 16, 16]} /><meshBasicMaterial color="#fff1c9" toneMapped={false} /></mesh>} />
-      <ExternalModelLoader file="pottedPlant.glb" height={1.15} position={[-0.4, Y, 1.4]} />
-      <ExternalModelLoader file="sideTable.glb" height={0.5} position={[-0.45, Y, -1.5]} />
-      <ExternalModelLoader file="lampSquareTable.glb" height={0.42} position={[-0.45, Y + 0.5, -1.5]} />
-      <ExternalModelLoader file="televisionModern.glb" length={1.0} position={[-1.8, Y + 0.55, 1.4]} rotation={[0, Math.PI, 0]} />
-      <ExternalModelLoader file="cabinetTelevision.glb" length={1.5} position={[-1.8, Y, 1.4]} rotation={[0, Math.PI, 0]} />
-      {/* Waschmaschine + Trockner im Technikraum */}
-      <ExternalModelLoader file="washer.glb" height={0.88} position={[-0.4, 0.2, -1.5]} />
-      <ExternalModelLoader file="dryer.glb" height={0.88} position={[0.2, 0.2, -1.5]} />
+      <mesh position={[-1.75, Y + 0.008, -0.15]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <planeGeometry args={[2.8, 1.9]} /><meshStandardMaterial {...wool} color="#d9d3c7" roughness={1} metalness={0} />
+      </mesh>
+      <ExternalModelLoader file="ph:sofa_02" length={2.1} position={[-2.05, Y, -1.42]} />
+      <ExternalModelLoader file="ph:coffee_table_round_01" height={0.4} position={[-1.75, Y, -0.35]} />
+      <ExternalModelLoader file="ph:mid_century_lounge_chair" height={0.85} position={[-0.75, Y, -0.1]} rotation={[0, -2.2, 0]} />
+      <ExternalModelLoader file="ph:modern_wooden_cabinet" length={1.6} position={[-3.0, Y, 0.65]} rotation={[0, Math.PI / 2, 0]} />
+      <ExternalModelLoader file="ph:potted_plant_04" height={0.4} position={[-3.0, Y + 0.62, 0.95]} />
+      <ExternalModelLoader file="ph:desk_lamp_arm_01" height={0.7} position={[-3.0, Y + 0.62, 0.35]} rotation={[0, 1.2, 0]} />
+      <ExternalModelLoader file="ph:modern_ceiling_lamp_01" height={0.75} position={[-1.75, 4.4, -0.35]} />
+      <ExternalModelLoader file="ph:wooden_ladder" height={1.55} position={[-0.5, Y, 1.5]} rotation={[0, 2.6, 0]} />
+      <ExternalModelLoader file="ph:metal_toolbox" length={0.55} position={[-0.6, Y, 0.85]} rotation={[0, 0.5, 0]} />
+      <pointLight position={[-1.75, 4.45, -0.35]} intensity={6} distance={5} color="#ffd9a8" />
     </group>
   )
 }

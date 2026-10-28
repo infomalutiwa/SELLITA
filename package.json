@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview",
-    "assets": "node scripts/fetch-3d-assets.mjs"
+    "assets": "node scripts/fetch-3d-assets.mjs",
+    "ph": "node scripts/fetch-polyhaven.mjs"
   },
   "dependencies": {
     "@react-three/drei": "^10.7.9",

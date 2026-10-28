@@ -2,19 +2,9 @@ import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import type { Group } from 'three'
 import { S, smooth } from '../state'
-import { grassTexture } from './textures'
+import { ExternalModelLoader } from './ExternalModelLoader'
+import { usePbr } from './pbr'
 
-const Tree = ({ p, s = 1, c = '#2f6b4a' }: { p: [number, number, number]; s?: number; c?: string }) => (
-  <group position={p} scale={s}>
-    <mesh position={[0, 0.7, 0]} castShadow><cylinderGeometry args={[0.1, 0.16, 1.4, 8]} /><meshStandardMaterial color="#5b4636" roughness={1} /></mesh>
-    {[[0, 2.0, 0, 0.9], [0.25, 2.7, 0.1, 0.65], [-0.15, 3.2, -0.05, 0.42]].map(([x, y, z, r], i) => (
-      <mesh key={i} position={[x, y, z]} castShadow><icosahedronGeometry args={[r, 1]} /><meshStandardMaterial color={c} roughness={0.9} flatShading /></mesh>
-    ))}
-  </group>
-)
-const Bush = ({ p, s = 1 }: { p: [number, number, number]; s?: number }) => (
-  <mesh position={p} scale={[s, s * 0.75, s]} castShadow><icosahedronGeometry args={[0.38, 1]} /><meshStandardMaterial color="#3b7d55" roughness={0.9} flatShading /></mesh>
-)
 const Lamp = ({ p }: { p: [number, number, number] }) => (
   <group position={p}>
     <mesh position={[0, 0.25, 0]}><cylinderGeometry args={[0.03, 0.03, 0.5, 8]} /><meshStandardMaterial color="#1e242b" metalness={0.8} roughness={0.3} /></mesh>
@@ -23,45 +13,52 @@ const Lamp = ({ p }: { p: [number, number, number] }) => (
   </group>
 )
 
-/** Garten: Rasen, Weg, Zaun, Bäume, Terrasse, Außeneinheit der Wärmepumpe, Solarmodule, Schornstein. */
+const SHRUBS = ['ph:shrub_01', 'ph:shrub_02', 'ph:shrub_03', 'ph:shrub_04'] as const
+
+/** Garten: großer Rasen bis zum Horizont, Plattenweg, Terrasse, Sträucher (Poly Haven, fotogescannt), Gartenlampen. */
 export function Exterior() {
-  const grass = useMemo(() => grassTexture(), [])
+  const lawn = usePbr('leafy_grass', [70, 70], { metalness: 0 })
+  const pavers = usePbr('stone_pavers', [1.2, 5], { metalness: 0 })
+  const deck = usePbr('wood_planks', [1.5, 2.2], { metalness: 0 })
+  const found = usePbr('concrete_floor_01', [4, 0.3], { metalness: 0 })
   const scenery = useRef<Group>(null)
-  // Bäume/Büsche/Zaun blenden aus, sobald der Röntgen-Blick läuft (sonst verdecken sie die Kamera)
+  // Sträucher blenden aus, sobald der Röntgen-Blick läuft (sonst verdecken sie die Kamera)
   useFrame(() => { if (scenery.current) scenery.current.visible = S.free ? !S.xrayForce : S.p < 0.07 || S.p > 0.9 })
+  const bushes = useMemo(() => {
+    const r = (i: number) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x) }
+    const out: { id: string; p: [number, number, number]; s: number; r: number }[] = []
+    // Vorgarten-Beete
+    for (let i = 0; i < 9; i++) out.push({ id: SHRUBS[i % 4], p: [-3.1 + i * 0.78 + (i > 4 ? 0.7 : 0), 0, 2.75 + r(i) * 0.25], s: 0.7 + r(i + 3) * 0.35, r: r(i) * 6 })
+    // Seitliche Bepflanzung + Hecke im Hintergrund
+    for (let i = 0; i < 14; i++) { const a = Math.PI * (1.05 + (i / 13) * 0.9); out.push({ id: SHRUBS[(i + 1) % 4], p: [Math.cos(a) * 7.5, 0, Math.sin(a) * 7.5], s: 2.2 + r(i + 9) * 0.9, r: r(i) * 6 }) }
+    for (let i = 0; i < 6; i++) out.push({ id: SHRUBS[(i + 2) % 4], p: [i % 2 ? 3.9 : -3.9, 0, -1.2 + i * 0.7], s: 0.9 + r(i + 21) * 0.5, r: r(i + 4) * 6 })
+    return out
+  }, [])
   return (
     <group>
-      {/* Rasenfläche auf dem Sockel */}
-      <mesh position={[0, 0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-        <circleGeometry args={[5.7, 64]} />
-        <meshStandardMaterial map={grass} roughness={1} />
+      {/* Rasen */}
+      <mesh position={[0, -0.01, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+        <circleGeometry args={[80, 64]} />
+        <meshStandardMaterial {...lawn} color="#b9c9a0" roughness={1} metalness={0} />
       </mesh>
-      {/* Weg zur Haustür */}
-      {Array.from({ length: 6 }, (_, i) => (
-        <mesh key={i} position={[((i % 2) - 0.5) * 0.08, 0.02, 2.5 + i * 0.52]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-          <planeGeometry args={[1.1, 0.42]} /><meshStandardMaterial color="#cfd6de" roughness={0.8} />
-        </mesh>
-      ))}
-      {/* Terrasse links */}
-      <mesh position={[-4.2, 0.03, 0.8]} receiveShadow><boxGeometry args={[1.8, 0.06, 3]} /><meshStandardMaterial color="#8b7355" roughness={0.9} /></mesh>
+      {/* Fundament */}
+      <mesh position={[0, 0.05, 0]} receiveShadow castShadow><boxGeometry args={[6.6, 0.3, 4.2]} /><meshStandardMaterial {...found} color="#c9c9c9" /></mesh>
+      {/* Plattenweg */}
+      <mesh position={[0, 0.012, 5.3]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[1.4, 6.6]} /><meshStandardMaterial {...pavers} color="#d6d2cb" /></mesh>
+      <mesh position={[0, 0.02, 2.35]} receiveShadow><boxGeometry args={[1.6, 0.06, 0.5]} /><meshStandardMaterial {...pavers} color="#d6d2cb" /></mesh>
+      {/* Terrasse */}
+      <mesh position={[-4.4, 0.06, 0.8]} receiveShadow castShadow><boxGeometry args={[2.0, 0.12, 3.2]} /><meshStandardMaterial {...deck} color="#e0cdb4" /></mesh>
       <group ref={scenery}>
-      {/* Vorgarten-Beet */}
-      {[-3, -2.4, -1.8, 1.8, 2.4, 3].map((x, i) => <Bush key={x} p={[x, 0.28, 2.65 - (i % 2) * 0.1]} s={0.9 + (i % 3) * 0.15} />)}
-      {/* Bäume */}
-      <Tree p={[-4.4, 0, -3.2]} s={1.15} />
-      <Tree p={[4.5, 0, -2.6]} s={1.3} c="#3a7a52" />
-      <Tree p={[4.0, 0, 3.4]} s={0.8} c="#4a8a5a" />
-      <Bush p={[-4.6, 0.28, 2.8]} s={1.2} /><Bush p={[-3.9, 0.28, -0.6]} s={1} />
-      <Lamp p={[-0.9, 0, 3.4]} /><Lamp p={[0.9, 0, 3.4]} />
-      {/* Zaun */}
-      {Array.from({ length: 22 }, (_, i) => {
-        const a = Math.PI * 1.04 + (i / 21) * Math.PI * 0.92
-        return <mesh key={i} position={[Math.cos(a) * 5.35, 0.3, Math.sin(a) * 5.35]} rotation={[0, -a + Math.PI / 2, 0]}><boxGeometry args={[0.07, 0.6, 0.04]} /><meshStandardMaterial color="#e2e8f0" roughness={0.6} /></mesh>
-      })}
+        {bushes.map((b, i) => (
+          <ExternalModelLoader key={i} file={b.id} height={b.s} position={b.p} rotation={[0, b.r, 0]} fallback={null} />
+        ))}
+        <ExternalModelLoader file="ph:fern_02" height={0.6} position={[-0.9, 0, 2.7]} />
+        <ExternalModelLoader file="ph:fern_02" height={0.6} position={[0.9, 0, 2.7]} />
+        <Lamp p={[-1.1, 0, 3.6]} /><Lamp p={[1.1, 0, 3.6]} />
       </group>
-      {/* Schornstein (Abgas) */}
-      <mesh position={[-1.6, 6.9, -0.9]} castShadow><boxGeometry args={[0.45, 1.3, 0.45]} /><meshStandardMaterial color="#8a6f62" roughness={0.9} /></mesh>
-      <mesh position={[-1.6, 7.58, -0.9]}><boxGeometry args={[0.58, 0.08, 0.58]} /><meshStandardMaterial color="#2a3139" metalness={0.5} roughness={0.4} /></mesh>
+      {/* Schornstein */}
+      <mesh position={[-1.6, 6.9, -0.9]} castShadow><boxGeometry args={[0.45, 1.3, 0.45]} /><meshStandardMaterial {...found} color="#9a8a80" roughness={0.95} /></mesh>
+      <mesh position={[-1.6, 7.58, -0.9]}><boxGeometry args={[0.58, 0.08, 0.58]} /><meshStandardMaterial color="#2a3139" metalness={0.6} roughness={0.4} /></mesh>
     </group>
   )
 }

@@ -76,7 +76,7 @@ export function CameraRig() {
     look.current.lerp(tgt, Math.min(1, dt * 12))
     camera.lookAt(look.current)
     const cam = camera as PerspectiveCamera
-    const fov = S.p > 0.88 ? 38 : 42
+    const fov = 30 + 12 * smooth(0.04, 0.16, S.p) - 6 * smooth(0.85, 0.9, S.p)
     if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 4); cam.updateProjectionMatrix() }
   })
 
