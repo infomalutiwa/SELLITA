@@ -10,24 +10,62 @@ export const FIRMA = {
   tax: 'Steuernummer: [wird nachgereicht / beim Finanzamt Böblingen]',
 }
 
-export const SCENES = [
-  { id: 'aussen', hud: 'Das Haus', color: '#FFFFFF' },
-  { id: 'wand', hud: 'Wand-Scan · Leckortung', color: '#EF4444' },
-  { id: 'bad', hud: 'Bad & Sanitär', color: '#0EA5E9' },
-  { id: 'wohnen', hud: 'Wohnraum & Möbel', color: '#FFFFFF' },
-  { id: 'balkon', hud: 'Balkon & Elektrik', color: '#0EA5E9' },
-  { id: 'anfrage', hud: '100 km · Anfrage', color: '#0EA5E9' },
-]
+export const MAPS = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('Rohrweg 20, 71116 Gärtringen')
 
-export const SERVICES = [
-  { id: 'leck', label: 'Leckortung / Wand-Check', icon: 'ScanSearch' },
-  { id: 'bad', label: 'Badsanierung', icon: 'Bath' },
-  { id: 'sanitaer', label: 'Sanitär', icon: 'Droplets' },
-  { id: 'moebel', label: 'Möbel demontieren/montieren', icon: 'Hammer' },
-  { id: 'balkon', label: 'Balkonsanierung', icon: 'Fence' },
-  { id: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller' },
-  { id: 'elektrik', label: 'Elektrik / Montage', icon: 'Zap' },
-] as const
+export type Service = {
+  id: string
+  film: string // Abschnitt im Hintergrundfilm (video/manifest.json -> marks)
+  label: string
+  title: string
+  text: string
+  points: string[]
+  icon: string
+}
+
+export const SERVICES: Service[] = [
+  {
+    id: 'leck', film: 'leck', label: 'Leckortung', icon: 'ScanSearch',
+    title: 'Lecks finden, ohne die Wand aufzustemmen',
+    text: 'Feuchte Wand, steigender Wasserzähler, Fleck an der Decke? Mit Wärmebildkamera und Feuchtemessung grenzen wir die Stelle ein, bevor irgendwo gestemmt wird.',
+    points: ['Wärmebild (Thermografie)', 'Feuchtemessung im Mauerwerk', 'Gezielte Öffnung statt großer Baustelle'],
+  },
+  {
+    id: 'bad', film: 'bad', label: 'Badsanierung', icon: 'Bath',
+    title: 'Vom alten Bad zum neuen – komplett',
+    text: 'Wir bauen das alte Bad zurück, verlegen neue Leitungen, dichten ab und fliesen. Am Ende steht ein fertiges Bad, und Sie hatten nur einen Ansprechpartner.',
+    points: ['Rückbau und Entsorgung', 'Neue Wasser- und Abwasserleitungen', 'Abdichtung und Fliesen', 'Bodengleiche Dusche, Wand-WC'],
+  },
+  {
+    id: 'sanitaer', film: 'sanitaer', label: 'Sanitär', icon: 'Droplets',
+    title: 'Sanitär, das einfach funktioniert',
+    text: 'Armatur tropft, Dusche soll getauscht werden oder es braucht neue Leitungen: Wir installieren sauber und dicht.',
+    points: ['Armaturen und Duschsysteme', 'Waschtisch, WC, Eckventile', 'Kupfer- und Verbundrohr'],
+  },
+  {
+    id: 'elektrik', film: 'elektrik', label: 'Elektrik & Montage', icon: 'Zap',
+    title: 'Steckdosen, Schalter, Leuchten',
+    text: 'Bei Renovierungen setzen wir Steckdosen und Schalter, montieren Decken- und Wandleuchten und schließen sie an.',
+    points: ['Steckdosen und Schalter', 'Decken- und Wandleuchten', 'Montage im Zuge der Renovierung'],
+  },
+  {
+    id: 'moebel', film: 'moebel', label: 'Möbelmontage', icon: 'Hammer',
+    title: 'Möbel ab- und wieder aufbauen',
+    text: 'Umzug, neue Einrichtung oder Platz für die Renovierung: Wir demontieren, montieren und richten Schränke und Regale passgenau aus.',
+    points: ['Demontage', 'Montage nach Anleitung', 'Ausrichten und Befestigen'],
+  },
+  {
+    id: 'balkon', film: 'balkon', label: 'Balkonsanierung', icon: 'Fence',
+    title: 'Den Balkon wieder dicht bekommen',
+    text: 'Risse, lose Fliesen, Wasser im Belag: Wir nehmen den alten Belag ab und bauen neu auf, mit Abdichtung, Drainage und neuen Fliesen.',
+    points: ['Alten Belag entfernen', 'Abdichtung und Drainage', 'Neuer Belag'],
+  },
+  {
+    id: 'wohnung', film: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller',
+    title: 'Renoviert und bezugsfertig',
+    text: 'Vor dem Einzug oder nach dem Auszug: alte Tapeten runter, Wände glätten und streichen, neuer Boden, neue Sockelleisten.',
+    points: ['Wände glätten und streichen', 'Bodenbeläge', 'Sockelleisten und Details'],
+  },
+]
 
 // Approximate centres of PLZ zones (first two digits) around Baden-Württemberg
 export const HOME = { lat: 48.6417, lon: 8.8996 }

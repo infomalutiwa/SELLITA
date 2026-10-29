@@ -1,175 +1,227 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Lenis from 'lenis'
-import gsap from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { Component, type ReactNode } from 'react'
-import { Orbit, Phone, ScanEye, X } from 'lucide-react'
-import { useProgress } from '@react-three/drei'
-import { AnimatePresence, motion } from 'framer-motion'
-import { Experience } from './scene/Experience'
-import { Overlay } from './ui/Overlay'
-import { HudNav } from './ui/HudNav'
-import { Timeline } from './ui/Timeline'
-import { VideoScrub, loadVideoManifest, type VideoManifest } from './ui/VideoScrub'
+import { ArrowRight, Bath, Check, Droplets, Fence, Hammer, MapPin, Menu, MessageCircle, PaintRoller, Phone, ScanSearch, X, Zap } from 'lucide-react'
+import { BgFilm } from './ui/BgFilm'
+import { DirectContact, RequestForm } from './ui/Contact'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
-import { S, sceneOf } from './state'
-import { FIRMA } from './data'
+import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm } from './data'
 
-gsap.registerPlugin(ScrollTrigger)
-
-class GLBoundary extends Component<{ children: ReactNode }, { err: boolean }> {
-  state = { err: false }
-  static getDerivedStateFromError() { return { err: true } }
-  render() {
-    return this.state.err ? (
-      <div className="fixed inset-0 flex items-center justify-center p-8 text-center text-white/80">
-        <div><Logo big /><p className="mt-6">Ihr Browser unterstützt keine 3D-Grafik (WebGL). Rufen Sie uns an: <a className="underline" href={FIRMA.tel}>{FIRMA.phone}</a></p></div>
-      </div>
-    ) : this.props.children
-  }
-}
+const ICONS = { ScanSearch, Bath, Droplets, Zap, Hammer, Fence, PaintRoller }
+const NAV = [['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Kontakt']] as const
+const btn = 'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-[15px] font-semibold transition'
 
 export default function App() {
-  const [scene, setScene] = useState(0)
-  const [ren, setRen] = useState(true)
-  const [free, setFree] = useState(false)
-  const [xray, setXray] = useState(false)
-  const [legal, setLegal] = useState<LegalKind>(null)
-  const [playing, setPlaying] = useState(false)
   const lenis = useRef<Lenis | null>(null)
-  const autoRef = useRef<(() => void) | null>(null)
-  // vorgerenderter Film vorhanden? (undefined = wird geprüft)
-  const [video, setVideo] = useState<VideoManifest | null | undefined>(S.exp ? null : undefined)
-  const [vidProg, setVidProg] = useState(0)
-  useEffect(() => { if (video === undefined) loadVideoManifest().then(setVideo) }, [video])
-  const onVidProgress = useCallback((l: number, n: number) => setVidProg(Math.min(100, (l / n) * 100)), [])
+  const [legal, setLegal] = useState<LegalKind>(null)
+  const [pre, setPre] = useState<{ id: string; n: number } | null>(null)
+  const [menu, setMenu] = useState(false)
+  const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
-    const l = new Lenis({ duration: 1.25, smoothWheel: true })
+    const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
+    const l = new Lenis({ duration: 1.1, smoothWheel: !reduce })
     lenis.current = l
-    l.on('scroll', ScrollTrigger.update)
-    const tick = (t: number) => l.raf(t * 1000)
-    gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
-    const st = ScrollTrigger.create({
-      trigger: '#scroll', start: 'top top', end: 'bottom bottom',
-      onUpdate: (self) => { S.target = self.progress; setScene((s) => { const n = sceneOf(self.progress); return n === s ? s : n }) },
-    })
-    return () => { st.kill(); gsap.ticker.remove(tick); l.destroy() }
+    let raf = requestAnimationFrame(function tick(t) { l.raf(t); raf = requestAnimationFrame(tick) })
+    const onScroll = () => setScrolled(scrollY > 40)
+    addEventListener('scroll', onScroll, { passive: true })
+    // Inhalte weich einblenden, sobald sie ins Bild kommen
+    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('in')), { threshold: 0.15 })
+    document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
+    return () => { cancelAnimationFrame(raf); l.destroy(); io.disconnect(); removeEventListener('scroll', onScroll) }
   }, [])
 
-  useEffect(() => { S.renTarget = ren ? 1 : 0 }, [ren])
-  useEffect(() => {
-    S.free = free
-    if (free) lenis.current?.stop(); else lenis.current?.start()
-  }, [free])
-  useEffect(() => { S.xrayForce = xray }, [xray])
-
-  const jump = useCallback((p: number) => {
-    const max = document.documentElement.scrollHeight - window.innerHeight
-    lenis.current?.scrollTo(p * max, { duration: 2.2 })
+  const go = useCallback((id: string) => {
+    setMenu(false)
+    const el = document.getElementById(id)
+    if (el) lenis.current?.scrollTo(el, { offset: -64, duration: 1.4 })
   }, [])
-
-  const stop = useCallback(() => {
-    setPlaying(false)
-    lenis.current?.scrollTo(window.scrollY, { immediate: true, force: true })
-  }, [])
-  const play = useCallback(() => {
-    if (playing) return stop()
-    const max = document.documentElement.scrollHeight - window.innerHeight
-    if (S.target > 0.985) lenis.current?.scrollTo(0, { immediate: true })
-    setPlaying(true)
-    lenis.current?.scrollTo(max, { duration: Math.max(2, (1 - Math.min(S.target, 0.985)) * 65), easing: (t) => t, onComplete: () => setPlaying(false) })
-  }, [playing, stop])
-  autoRef.current = play
-  const seek = useCallback((p: number, live: boolean) => {
-    const max = document.documentElement.scrollHeight - window.innerHeight
-    setPlaying(false)
-    if (live) lenis.current?.scrollTo(p * max, { immediate: true, force: true })
-    else lenis.current?.scrollTo(p * max, { duration: 2, force: true })
-  }, [])
-  useEffect(() => {
-    if (!playing) return
-    const off = () => setPlaying(false)
-    window.addEventListener('wheel', off, { passive: true }); window.addEventListener('touchstart', off, { passive: true }); window.addEventListener('keydown', off)
-    return () => { window.removeEventListener('wheel', off); window.removeEventListener('touchstart', off); window.removeEventListener('keydown', off) }
-  }, [playing])
+  const ask = useCallback((id: string) => { setPre((p) => ({ id, n: (p?.n ?? 0) + 1 })); go('kontakt') }, [go])
 
   return (
     <>
-      {video !== undefined && <GLBoundary><Experience video={!!video} active={!video || scene >= 5 || free} /></GLBoundary>}
-      {video && <VideoScrub m={video} onProgress={onVidProgress} />}
-      <Loader video={video === undefined ? 'pending' : video ? vidProg : null} onDone={() => setTimeout(() => { if (!S.exp && window.scrollY < 10 && !matchMedia('(prefers-reduced-motion: reduce)').matches) autoRef.current?.() }, 2500)} />
-      {!free && <Letterbox />}
-      <div id="scroll" style={{ height: '800vh' }} aria-hidden />
+      <BgFilm />
 
-      <header className="pointer-events-none fixed inset-x-0 top-0 z-30 flex items-start justify-between p-4 md:px-8">
-        <div className={`transition-opacity ${scene === 0 ? 'opacity-0' : 'opacity-100'}`}><Logo /></div>
-        <div className="pointer-events-auto flex items-center gap-2">
-          {free && (
-            <button onClick={() => setXray(!xray)} className={`glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${xray ? 'text-sky-300' : ''}`}><ScanEye size={14} /> Röntgen</button>
-          )}
-          {!video && <button onClick={() => setFree(!free)} className="glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold" aria-pressed={free}>
-            {free ? <X size={14} /> : <Orbit size={14} />}<span className="hidden sm:inline">{free ? 'Zurück zur Tour' : 'Haus frei drehen'}</span>
-          </button>}
-          <a href={FIRMA.tel} className="flex items-center gap-2 rounded-full bg-[#0ea5e9] px-3 py-2 text-xs font-bold shadow-lg shadow-sky-900/40"><Phone size={14} /><span className="hidden sm:inline">{FIRMA.phone}</span></a>
+      <header className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${scrolled || menu ? 'border-b border-white/10 bg-[#07090e]/85 backdrop-blur-md' : ''}`}>
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
+          <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="Zum Seitenanfang"><Logo /></a>
+          <nav className="hidden items-center gap-7 text-[15px] text-white/75 lg:flex">
+            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="transition hover:text-white">{label}</a>)}
+          </nav>
+          <div className="flex items-center gap-2">
+            <a href={FIRMA.wa} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="hidden h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-white/85 transition hover:border-white/35 sm:flex"><MessageCircle size={18} /></a>
+            <a href={FIRMA.tel} className={`${btn} bg-sky-500 !px-4 !py-2.5 text-white hover:bg-sky-400`}><Phone size={16} /><span className="hidden sm:inline">{FIRMA.phone}</span><span className="sm:hidden">Anrufen</span></a>
+            <button onClick={() => setMenu(!menu)} aria-label="Menü" aria-expanded={menu} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 lg:hidden">{menu ? <X size={18} /> : <Menu size={18} />}</button>
+          </div>
         </div>
+        {menu && (
+          <nav className="border-t border-white/10 px-4 pb-4 lg:hidden">
+            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="block border-b border-white/5 py-3.5 text-lg">{label}</a>)}
+          </nav>
+        )}
       </header>
 
-      {!free && <Overlay scene={scene} ren={ren} onRen={video ? undefined : setRen} />}
-      {!free && <HudNav active={scene} onJump={jump} />}
+      <main id="top" className="relative z-10">
+        {/* Einstieg */}
+        <section data-film="intro" data-dim="0.12" data-x="0.25" data-z="0.78" data-fit="0.8" data-ay="0.14" className="flex min-h-[100svh] items-end pb-24 md:pb-20">
+          <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+            <div className="reveal max-w-3xl">
+              <p className="mb-4 flex items-center gap-2 text-sm text-white/70"><MapPin size={15} className="text-sky-300" /> Gärtringen · Landkreis Böblingen</p>
+              <h1 className="text-[2.4rem] font-semibold leading-[1.05] tracking-tight md:text-6xl">Sanitär, Leckortung und Sanierung aus einer Hand.</h1>
+              <p className="mt-5 max-w-2xl text-lg text-white/75 md:text-xl">Wir finden Lecks, sanieren Bäder und Balkone, renovieren Wohnungen und übernehmen Montagen – in Gärtringen und bis zu 100 km drumherum.</p>
+              <div className="mt-8 flex flex-wrap gap-3">
+                <button onClick={() => go('kontakt')} className={`${btn} bg-white text-[#07090e] hover:bg-white/90`}>Anfrage stellen <ArrowRight size={17} /></button>
+                <a href={FIRMA.tel} className={`${btn} border border-white/25 hover:border-white/50`}><Phone size={17} /> {FIRMA.phone}</a>
+              </div>
+            </div>
+            <ul className="reveal mt-12 hidden flex-wrap gap-x-6 gap-y-2 text-sm text-white/60 md:flex">
+              {SERVICES.map((s) => <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); go(s.id) }} className="transition hover:text-white">{s.label}</a></li>)}
+            </ul>
+          </div>
+        </section>
 
-      {/* progress bar */}
-      <ProgressBar />
+        {/* Leistungen */}
+        <div id="leistungen" className="mx-auto max-w-7xl px-4 pt-16 md:px-8">
+          <div className="reveal max-w-2xl">
+            <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Leistungen</p>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Sieben Leistungen, ein Ansprechpartner.</h2>
+          </div>
+        </div>
+        {SERVICES.map((s, i) => <ServiceSection key={s.id} s={s} i={i} onAsk={ask} />)}
 
-      {!free && <Timeline playing={playing} onPlay={play} onSeek={seek} />}
+        {/* Ablauf */}
+        <section id="ablauf" data-film="alles" data-dim="0.6" className="py-28 md:py-40">
+          <div className="mx-auto max-w-7xl px-4 md:px-8">
+            <div className="reveal max-w-2xl">
+              <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Ablauf</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">So läuft es bei uns.</h2>
+            </div>
+            <ol className="mt-12 grid gap-4 md:grid-cols-4">
+              {[
+                ['Kurz melden', 'Anruf, WhatsApp oder E-Mail – gern mit ein paar Fotos vom Schaden oder vom Raum.'],
+                ['Termin vor Ort', 'Wir schauen uns alles an und besprechen mit Ihnen, was wirklich nötig ist.'],
+                ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet.'],
+                ['Ausführung', 'Wir arbeiten sauber und übergeben die Baustelle aufgeräumt.'],
+              ].map(([t, d], i) => (
+                <li key={t} className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/80 p-6 backdrop-blur" style={{ transitionDelay: `${i * 80}ms` }}>
+                  <span className="text-sm tabular-nums text-sky-300">0{i + 1}</span>
+                  <h3 className="mt-3 text-xl font-semibold">{t}</h3>
+                  <p className="mt-2 text-[15px] leading-relaxed text-white/65">{d}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
 
-      <footer className="pointer-events-auto fixed bottom-1.5 left-4 z-30 flex gap-4 text-[11px] text-white/50 md:left-10">
-        <button onClick={() => setLegal('impressum')} className="hover:text-white">Impressum</button>
-        <button onClick={() => setLegal('datenschutz')} className="hover:text-white">Datenschutz</button>
-        <span className="hidden sm:inline">{FIRMA.street}, {FIRMA.city}</span>
+        <Area />
+
+        {/* Kontakt */}
+        <section id="kontakt" data-film="outro" data-a="0.5" data-b="1" data-dim="0.72" className="pb-28 pt-20 md:pb-32 md:pt-28">
+          <div className="mx-auto grid max-w-7xl gap-8 px-4 md:px-8 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
+            <div className="reveal">
+              <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Kontakt</p>
+              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Erzählen Sie uns, worum es geht.</h2>
+              <p className="mt-4 max-w-md text-lg text-white/70">Am schnellsten geht es per Telefon oder WhatsApp. Oder Sie füllen das Formular aus – wir melden uns zurück.</p>
+              <div className="mt-8"><DirectContact /></div>
+            </div>
+            <div className="reveal"><RequestForm preselect={pre} /></div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="relative z-10 border-t border-white/10 bg-[#07090e] pb-24 md:pb-0">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 text-sm text-white/55 md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
+            <Logo />
+            <span>{FIRMA.street}, {FIRMA.city}</span>
+          </div>
+          <div className="flex flex-wrap gap-x-6 gap-y-2">
+            <a href={FIRMA.tel} className="hover:text-white">{FIRMA.phone}</a>
+            <a href={`mailto:${FIRMA.mail}`} className="hover:text-white">{FIRMA.mail}</a>
+            <button onClick={() => setLegal('impressum')} className="hover:text-white">Impressum</button>
+            <button onClick={() => setLegal('datenschutz')} className="hover:text-white">Datenschutz</button>
+          </div>
+        </div>
       </footer>
+
+      {/* Schnellkontakt am Handy */}
+      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/10 bg-[#07090e]/95 text-[13px] font-medium backdrop-blur transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <a href={FIRMA.tel} className="flex flex-col items-center gap-1 py-2.5"><Phone size={19} className="text-sky-300" />Anrufen</a>
+        <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 py-2.5"><MessageCircle size={19} className="text-[#25d366]" />WhatsApp</a>
+        <button onClick={() => go('kontakt')} className="flex flex-col items-center gap-1 py-2.5"><ArrowRight size={19} />Anfrage</button>
+      </div>
+
       <LegalModal kind={legal} onClose={() => setLegal(null)} />
     </>
   )
 }
 
-function ProgressBar() {
-  const ref = useRef<HTMLDivElement>(null)
-  useEffect(() => {
-    let raf = 0
-    const loop = () => { if (ref.current) ref.current.style.transform = `scaleX(${S.p})`; raf = requestAnimationFrame(loop) }
-    loop()
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return <div className="fixed inset-x-0 top-0 z-40 h-[3px] bg-white/5"><div ref={ref} className="h-full origin-left bg-gradient-to-r from-[#0ea5e9] to-white" style={{ transform: 'scaleX(0)' }} /></div>
-}
-
-function Letterbox() {
-  const bar = 'fixed inset-x-0 z-[15] bg-[#07090e] pointer-events-none transition-[height] duration-1000'
-  const h = 'max(0px, calc((100vh - 100vw / 2.39) / 2))'
-  return (<><div className={bar + ' top-0'} style={{ height: h }} /><div className={bar + ' bottom-0'} style={{ height: h }} /></>)
-}
-
-function Loader({ onDone, video }: { onDone: () => void; video: number | 'pending' | null }) {
-  const gl = useProgress()
-  // Film-Modus: Fortschritt der Bildsequenz; sonst: 3D-Assets
-  const progress = video === 'pending' ? 0 : video === null ? gl.progress : video
-  const active = video === 'pending' ? true : video === null ? gl.active : video < 100
-  const [done, setDone] = useState(false)
-  useEffect(() => { if (!active && progress >= 100) { const t = setTimeout(() => { setDone(true); onDone() }, 500); return () => clearTimeout(t) } }, [active, progress])
+function ServiceSection({ s, i, onAsk }: { s: (typeof SERVICES)[number]; i: number; onAsk: (id: string) => void }) {
+  const Icon = ICONS[s.icon as keyof typeof ICONS]
+  const right = i % 2 === 1
   return (
-    <AnimatePresence>
-      {!done && (
-        <motion.div className="fixed inset-0 z-[60] flex flex-col items-center justify-center gap-6 bg-[#07090e]" exit={{ opacity: 0 }} transition={{ duration: 0.8 }}>
-          <Logo big />
-          <div className="h-[3px] w-56 overflow-hidden rounded-full bg-white/10">
-            <div className="h-full bg-gradient-to-r from-[#0ea5e9] to-white transition-all" style={{ width: `${Math.max(4, progress)}%` }} />
+    <section id={s.id} data-film={s.film} data-dim="0.36" className="min-h-[165vh]">
+      <div className="sticky top-[max(5rem,18vh)] mx-auto max-w-7xl px-4 py-10 md:px-8">
+        <article className={`reveal max-w-[34rem] rounded-xl border border-white/10 bg-[#0b0e13]/82 p-6 backdrop-blur-md md:p-8 ${right ? 'md:ml-auto' : ''}`}>
+          <div className="flex items-center justify-between">
+            <span className={`flex items-center gap-2 text-sm font-medium ${s.id === 'leck' ? 'text-red-400' : 'text-sky-300'}`}><Icon size={17} /> {s.label}</span>
+            <span className="text-sm tabular-nums text-white/40">{String(i + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}</span>
           </div>
-          <p className="text-[11px] uppercase tracking-[0.3em] text-white/50">Haus wird aufgebaut · {Math.round(progress)}%</p>
-        </motion.div>
-      )}
-    </AnimatePresence>
+          <h3 className="mt-4 text-[1.75rem] font-semibold leading-tight tracking-tight md:text-[2.25rem]">{s.title}</h3>
+          <p className="mt-3 text-[16px] leading-relaxed text-white/70">{s.text}</p>
+          <ul className="mt-5 space-y-2">
+            {s.points.map((p) => <li key={p} className="flex items-start gap-2.5 text-[15px]"><Check size={17} className="mt-0.5 shrink-0 text-sky-300" />{p}</li>)}
+          </ul>
+          <div className="mt-6 flex flex-wrap gap-2">
+            <button onClick={() => onAsk(s.id)} className={`${btn} bg-white !py-2.5 text-[#07090e] hover:bg-white/90`}>Dazu anfragen <ArrowRight size={16} /></button>
+            <a href={FIRMA.tel} className={`${btn} border border-white/20 !py-2.5 hover:border-white/45`}><Phone size={16} /> Anrufen</a>
+          </div>
+        </article>
+      </div>
+    </section>
+  )
+}
+
+function Area() {
+  const [q, setQ] = useState('')
+  const r = useMemo(() => checkArea(q), [q])
+  const cities = useMemo(() => Object.entries(CITY_LOOKUP)
+    .map(([name, pos]) => ({ name: name.replace(/(^|-)\p{L}/gu, (c) => c.toUpperCase()), km: Math.round(distKm([HOME.lat, HOME.lon], pos)) }))
+    .filter((c) => c.km > 2 && c.km <= 100).sort((a, b) => a.km - b.km), [])
+  return (
+    <section id="einsatzgebiet" data-film="outro" data-a="0" data-b="0.5" data-dim="0.55" className="py-28 md:py-36">
+      <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-2 lg:items-start">
+        <div className="reveal">
+          <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Einsatzgebiet</p>
+          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Bis zu 100 km rund um Gärtringen.</h2>
+          <p className="mt-4 max-w-lg text-lg text-white/70">Vom Kreis Böblingen über Stuttgart und Tübingen bis Pforzheim und Karlsruhe. Prüfen Sie Ihren Ort:</p>
+          <label className="mt-6 block max-w-md">
+            <span className="sr-only">PLZ oder Ort</span>
+            <div className="relative">
+              <MapPin size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-300" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="PLZ oder Ort, z. B. 72070 Tübingen"
+                className="w-full rounded-lg border border-white/15 bg-[#0b0e13]/85 py-3.5 pl-11 pr-4 text-[15px] outline-none backdrop-blur placeholder:text-white/35 focus:border-sky-400" />
+            </div>
+          </label>
+          <p className="mt-3 min-h-6 text-[15px]" aria-live="polite">
+            {q.trim().length > 2 && (r.known
+              ? r.inside
+                ? <span className="text-emerald-300">Ja, das liegt in unserem Einsatzgebiet{r.km ? ` – ca. ${r.km} km von Gärtringen` : ''}.</span>
+                : <span className="text-amber-300">Ca. {r.km} km – etwas weiter weg. Rufen Sie an, oft geht es trotzdem.</span>
+              : <span className="text-white/50">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
+          </p>
+        </div>
+        <div className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/82 p-6 backdrop-blur md:p-8">
+          <h3 className="text-sm font-medium uppercase tracking-[0.14em] text-white/55">Entfernung ab Gärtringen</h3>
+          <ul className="mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+            {cities.map((c) => (
+              <li key={c.name} className="flex items-baseline justify-between border-b border-white/8 py-2.5 text-[15px]">
+                <span>{c.name}</span><span className="tabular-nums text-white/50">{c.km} km</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </section>
   )
 }

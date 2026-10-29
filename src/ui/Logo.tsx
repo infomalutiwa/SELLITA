@@ -13,7 +13,7 @@ export function Logo({ big = false }: { big?: boolean }) {
       <HouseIcon size={big ? 56 : 30} />
       <div className="leading-none">
         <div className={`font-black tracking-[0.14em] ${big ? 'text-5xl md:text-7xl' : 'text-lg'}`}>SELLITA</div>
-        <div className={`font-semibold tracking-[0.2em] uppercase ${big ? 'mt-2 text-xs md:text-base' : 'text-[9px] mt-1'}`}>
+        <div className={`font-semibold tracking-[0.2em] uppercase ${big ? 'mt-2 text-xs md:text-base' : 'mt-1 hidden text-[9px] sm:block'}`}>
           <span className="text-[#38bdf8]">Sanitär</span> <span className="text-white/60">•</span> <span className="text-white">Leckortung</span> <span className="text-white/60">•</span> <span className="text-white">Sanierung</span>
         </div>
       </div>
