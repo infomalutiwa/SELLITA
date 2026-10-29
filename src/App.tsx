@@ -7,7 +7,7 @@ import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
 import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm, type Service } from './data'
 
-const NAV = [['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['kontakt', 'Kontakt']] as const
+const NAV = [['leistungen', 'Leistungen'], ['arbeiten', 'Arbeiten'], ['ablauf', 'Ablauf'], ['kontakt', 'Kontakt']] as const
 const poster = (s: Service) => (s.clip ? `clips/${s.clip}.webp` : 'img/heizung.webp')
 
 export default function App() {
@@ -64,6 +64,7 @@ export default function App() {
         <Hero />
         <ServiceList onAsk={ask} />
         <Showcase />
+        <Work />
         <Steps />
         <Area />
         <section id="kontakt" className="px-4 py-24 md:px-8 md:py-36">
@@ -162,6 +163,61 @@ function Showcase() {
           <p className="t4 mt-4 hidden text-right lg:block">{s.title}.</p>
         </div>
       </div>
+    </section>
+  )
+}
+
+const WORK: [string, string][] = [
+  ['Dachbad mit bodengleicher Dusche', ''],
+  ['Dachbad in Terrazzo und Messing', ''],
+  ['Dusche mit Holzoptik-Fliesen und Nische', ''],
+  ['Walk-in-Dusche in Marmoroptik', ''],
+  ['Duschbad mit Spiegelschrank', ''],
+  ['Duschbad mit Rinne und Nische', ''],
+  ['Dusche und WC, bodeneben', ''],
+  ['Duschbad mit Schiebetür', ''],
+]
+
+/** Bisherige Arbeiten: echte Bäder von Kunden, das erste groß; ein Klick öffnet das Bild. */
+function Work() {
+  const [open, setOpen] = useState<number | null>(null)
+  useEffect(() => {
+    if (open === null) return
+    const k = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(null)
+      if (e.key === 'ArrowRight') setOpen((o) => (o! + 1) % WORK.length)
+      if (e.key === 'ArrowLeft') setOpen((o) => (o! + WORK.length - 1) % WORK.length)
+    }
+    addEventListener('keydown', k)
+    return () => removeEventListener('keydown', k)
+  }, [open])
+  return (
+    <section id="arbeiten" className="mx-auto max-w-[1440px] px-4 py-24 md:px-8 md:py-40">
+      <div className="flex flex-wrap items-end justify-between gap-4" data-in>
+        <h2 className="t2">Bisherige Arbeiten</h2>
+        <p className="text-muted">Bäder, die wir für Kunden gebaut haben</p>
+      </div>
+      <ul className="mt-12 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4" data-in>
+        {WORK.map(([t], k) => (
+          <li key={k} className={k === 0 ? 'col-span-2 row-span-2' : k === WORK.length - 1 ? 'col-span-2' : ''}>
+            <button onClick={() => setOpen(k)} className="work group relative block h-full w-full overflow-hidden bg-tile text-left" aria-label={`${t} vergrößern`}>
+              <img src={`img/arbeiten/${k + 1}.webp`} alt={t} loading="lazy" className={`h-full w-full object-cover ${k === 0 ? 'aspect-[4/3] lg:aspect-auto' : k === WORK.length - 1 ? 'aspect-[3/2] lg:absolute lg:inset-0 lg:aspect-auto' : 'aspect-[3/4]'}`} />
+              <span className="absolute inset-x-0 bottom-0 bg-ink/85 px-4 py-3 text-sm font-semibold text-white">{t}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+      {open !== null && (
+        <div role="dialog" aria-modal aria-label={WORK[open][0]} className="modal-in fixed inset-0 z-50 flex flex-col items-center justify-center gap-4 bg-ink/95 p-4" onClick={() => setOpen(null)}>
+          <img src={`img/arbeiten/${open + 1}.webp`} alt={WORK[open][0]} className="max-h-[82svh] max-w-full object-contain" />
+          <div className="flex items-center gap-6 text-white" onClick={(e) => e.stopPropagation()}>
+            <button className="cut !px-5 !py-2" onClick={() => setOpen((open + WORK.length - 1) % WORK.length)} aria-label="Vorheriges Bild">‹</button>
+            <span className="font-semibold">{WORK[open][0]} · {open + 1}/{WORK.length}</span>
+            <button className="cut !px-5 !py-2" onClick={() => setOpen((open + 1) % WORK.length)} aria-label="Nächstes Bild">›</button>
+            <button className="link" onClick={() => setOpen(null)}>Schließen</button>
+          </div>
+        </div>
+      )}
     </section>
   )
 }
@@ -270,7 +326,7 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
             <div>
               <h2 className="t5 font-bold">Seite</h2>
               <ul className="mt-3 space-y-1.5">
-                {[['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Anfrage']].map(([id, l]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="link">{l}</a></li>)}
+                {[['leistungen', 'Leistungen'], ['arbeiten', 'Arbeiten'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Anfrage']].map(([id, l]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="link">{l}</a></li>)}
               </ul>
             </div>
             <div>
