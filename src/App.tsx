@@ -1,185 +1,69 @@
-import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Lenis from 'lenis'
-import { gsap } from 'gsap'
-import { ScrollTrigger } from 'gsap/ScrollTrigger'
-import { ArrowRight, Check, Flame, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react'
+import { MapPin, MessageCircle, Phone } from 'lucide-react'
 import { Clip } from './ui/Clip'
-import { DirectContact, RequestForm } from './ui/Contact'
+import { CouponForm } from './ui/Contact'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
-import { heroScroll } from './ui/heroScroll'
-import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm } from './data'
+import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm, type Service } from './data'
 
-gsap.registerPlugin(ScrollTrigger)
-const Tools3D = lazy(() => import('./ui/Tools3D'))
-
-const NAV = [['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Kontakt']] as const
-const btn = 'inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold transition'
-const h2 = 'display text-[2.2rem] md:text-[3.6rem]'
+const NAV = [['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['kontakt', 'Kontakt']] as const
+const poster = (s: Service) => (s.clip ? `clips/${s.clip}.webp` : 'img/heizung.webp')
 
 export default function App() {
   const lenis = useRef<Lenis | null>(null)
   const [legal, setLegal] = useState<LegalKind>(null)
   const [pre, setPre] = useState<{ id: string; n: number } | null>(null)
-  const [menu, setMenu] = useState(false)
   const [scrolled, setScrolled] = useState(false)
 
   useEffect(() => {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
-    const l = new Lenis({ duration: 1.1, smoothWheel: !reduce })
+    const l = new Lenis({ lerp: 0.12, smoothWheel: !reduce })
     lenis.current = l
-    // Lenis und ScrollTrigger auf demselben Takt
-    l.on('scroll', ScrollTrigger.update)
-    const tick = (t: number) => l.raf(t * 1000)
-    gsap.ticker.add(tick)
-    gsap.ticker.lagSmoothing(0)
-    const onScroll = () => setScrolled(scrollY > 40)
+    let raf = requestAnimationFrame(function tick(t) { l.raf(t); raf = requestAnimationFrame(tick) })
+    const onScroll = () => setScrolled(scrollY > 300)
     addEventListener('scroll', onScroll, { passive: true })
-
-    const ctx = gsap.context(() => {
-      // Werkzeuge fliegen beim Herunterscrollen auseinander
-      ScrollTrigger.create({ trigger: '#hero', start: 'top top', end: 'bottom top', onUpdate: (s) => { heroScroll.p = s.progress } })
-      // Video-Band: leichte Parallaxe
-      gsap.fromTo('#band-media', { yPercent: -10 }, { yPercent: 10, ease: 'none', scrollTrigger: { trigger: '#band', start: 'top bottom', end: 'bottom top', scrub: true } })
-      // Ablauf: Linie füllt sich, Schritte werden aktiv
-      gsap.fromTo('#steps-line', { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: '#steps', start: 'top 70%', end: 'bottom 55%', scrub: true } })
-      gsap.utils.toArray<HTMLElement>('#steps li').forEach((li) => ScrollTrigger.create({ trigger: li, start: 'top 62%', toggleClass: 'on' }))
-    })
-    return () => { ctx.revert(); gsap.ticker.remove(tick); l.destroy(); removeEventListener('scroll', onScroll) }
+    // Teile eines Abschnitts nacheinander einblenden, einmal
+    const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) } }), { threshold: 0.2 })
+    document.querySelectorAll('[data-in]').forEach((el) => io.observe(el))
+    return () => { cancelAnimationFrame(raf); l.destroy(); io.disconnect(); removeEventListener('scroll', onScroll) }
   }, [])
 
   const go = useCallback((id: string) => {
-    setMenu(false)
     const el = document.getElementById(id)
-    if (el) lenis.current?.scrollTo(el, { offset: -64, duration: 1.4 })
+    if (el) lenis.current?.scrollTo(el, { offset: -72, duration: 1.3 })
   }, [])
   const ask = useCallback((id: string) => { setPre((p) => ({ id, n: (p?.n ?? 0) + 1 })); go('kontakt') }, [go])
 
   return (
     <>
-      <header className={`fixed inset-x-0 top-0 z-40 transition-shadow duration-300 bg-white ${scrolled || menu ? 'shadow-[0_1px_0_var(--color-line)]' : ''}`}>
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
-          <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="Zum Seitenanfang"><Logo /></a>
-          <nav className="hidden items-center gap-8 text-[15px] text-ink-soft lg:flex">
-            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="transition hover:text-ink">{label}</a>)}
+      <header className="sticky top-0 z-40 bg-white">
+        <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 md:px-8">
+          <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="SELLITA, zum Seitenanfang"><Logo /></a>
+          <nav className="flex items-center gap-8">
+            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="link hidden font-medium md:inline">{label}</a>)}
+            <a href={FIRMA.tel} className="cut !px-6 !py-3"><Phone size={16} /><span className="hidden lg:inline">{FIRMA.phone}</span><span className="lg:hidden">Anrufen</span></a>
           </nav>
-          <div className="flex items-center gap-2">
-            <a href={FIRMA.wa} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="hidden h-10 w-10 items-center justify-center rounded-full border border-line bg-white transition hover:border-ink/30 sm:flex"><MessageCircle size={18} /></a>
-            <a href={FIRMA.tel} className={`${btn} bg-ink !px-4 !py-2.5 text-white hover:bg-water-deep`}><Phone size={16} /><span className="hidden sm:inline">{FIRMA.phone}</span><span className="sm:hidden">Anrufen</span></a>
-            <button onClick={() => setMenu(!menu)} aria-label="Menü" aria-expanded={menu} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white lg:hidden">{menu ? <X size={18} /> : <Menu size={18} />}</button>
-          </div>
         </div>
-        {menu && (
-          <nav className="border-t border-line bg-white px-4 pb-4 lg:hidden">
-            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="block border-b border-line py-3.5 text-lg">{label}</a>)}
-          </nav>
-        )}
       </header>
 
       <main id="top">
-        {/* Einstieg: Werkzeug in 3D */}
-        <section id="hero" className="tiles relative overflow-hidden">
-          <div className="mx-auto flex max-w-7xl flex-col px-4 md:px-8 lg:min-h-[100svh] lg:flex-row lg:items-center">
-            <div className="relative z-10 order-2 pb-14 lg:order-1 lg:w-[46%] lg:py-28">
-              <p className="fade-late mb-5 flex items-center gap-2 text-[15px] text-ink-soft"><MapPin size={16} className="text-water" /> Handwerksbetrieb in Gärtringen, Kreis Böblingen</p>
-              <h1 className="rise display text-[3rem] sm:text-[4rem] lg:text-[4.7rem] xl:text-[5.2rem]">
-                <span><span>Warmes Wasser.</span></span>
-                <span><span>Dichte Leitungen.</span></span>
-              </h1>
-              <p className="fade-late mt-6 max-w-[34rem] text-[17px] leading-relaxed text-ink-soft md:text-[19px]">
-                Heizung und Sanitär aus Gärtringen: Wir planen und warten Heizungen, installieren Bäder, finden Lecks und renovieren. Im Umkreis von 100 km.
-              </p>
-              <div className="fade-late mt-8 flex flex-wrap gap-3">
-                <a href={FIRMA.tel} className={`${btn} bg-water text-white hover:bg-water-deep`}><Phone size={17} /> {FIRMA.phone}</a>
-                <a href={FIRMA.wa} target="_blank" rel="noreferrer" className={`${btn} border border-ink/15 bg-white hover:border-ink/35`}><MessageCircle size={17} /> Fotos per WhatsApp</a>
-              </div>
-              <p className="fade-late mt-8 flex max-w-[34rem] items-start gap-3 rounded-2xl border border-signal/25 bg-white px-4 py-3 text-[15px] leading-snug">
-                <span className="mt-1.5 h-2 w-2 shrink-0 animate-pulse rounded-full bg-signal" />
-                <span><b>Wasser läuft gerade?</b> Hauptwasserhahn zudrehen, Strom im betroffenen Raum aus, dann anrufen.</span>
-              </p>
-            </div>
-            <div className="relative order-1 -mx-4 h-[46svh] min-h-[300px] md:mx-0 lg:absolute lg:inset-y-0 lg:right-0 lg:order-2 lg:h-auto lg:w-[58vw]">
-              <div className="card-slant absolute inset-0" /><div className="card-line absolute inset-0" />
-              <Suspense fallback={null}><Tools3D className="absolute inset-0" /></Suspense>
-            </div>
-          </div>
-        </section>
-
-        <Services onAsk={ask} />
-
-        {/* Video-Band */}
-        <section id="band" className="relative h-[78svh] min-h-[460px] overflow-hidden bg-ink text-white">
-          <div id="band-media" className="absolute inset-x-0 -inset-y-[12%]"><Clip name="rundgang" /></div>
-          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(37,40,46,.88),rgba(37,40,46,.2)_70%)] md:bg-[linear-gradient(90deg,rgba(37,40,46,.85),rgba(37,40,46,.35)_60%,transparent)]" />
-          <div className="relative mx-auto flex h-full max-w-7xl items-end px-4 pb-14 md:items-center md:px-8 md:pb-0">
-            <div className="max-w-xl">
-              <h2 className={h2}>Ein Ansprechpartner für das ganze Projekt.</h2>
-              <p className="mt-5 text-[17px] leading-relaxed text-white/80 md:text-[19px]">Ob nur eine Armatur oder die ganze Wohnung: Sie sprechen mit einer Person, die den Auftrag kennt, vom ersten Anruf bis zur Übergabe.</p>
-            </div>
-          </div>
-        </section>
-
-        {/* Ablauf */}
-        <section id="ablauf" className="py-20 md:py-32">
-          <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-8 lg:grid-cols-[1fr_1.2fr]">
-            <div className="lg:sticky lg:top-32 lg:self-start">
-              <h2 className={h2}>So läuft ein Auftrag.</h2>
-              <p className="mt-5 max-w-md text-[17px] leading-relaxed text-ink-soft">Keine Überraschungen: Sie wissen vor dem ersten Handgriff, was gemacht wird und was es kostet.</p>
-            </div>
-            <ol id="steps" className="relative pl-12 md:pl-16">
-              <span className="absolute bottom-3 left-[15px] top-3 w-px bg-line md:left-[19px]" />
-              <span id="steps-line" className="absolute bottom-3 left-[15px] top-3 w-px origin-top bg-water md:left-[19px]" />
-              {[
-                ['Kurz melden', 'Anruf, WhatsApp oder E-Mail. Am besten mit ein paar Fotos vom Schaden oder vom Raum.'],
-                ['Termin vor Ort', 'Wir schauen uns alles an, messen nach und besprechen mit Ihnen, was wirklich nötig ist.'],
-                ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet. Erst wenn Sie zusagen, geht es los.'],
-                ['Ausführung und Übergabe', 'Wir arbeiten sauber, halten Sie auf dem Laufenden und übergeben aufgeräumt.'],
-              ].map(([t, d], i) => (
-                <li key={t} className="group relative pb-14 last:pb-0">
-                  <span className="absolute -left-12 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-sm font-semibold tabular-nums text-ink-soft transition-colors duration-500 group-[.on]:border-water group-[.on]:bg-water group-[.on]:text-white md:-left-16 md:h-10 md:w-10">{i + 1}</span>
-                  <h3 className="wide text-[1.5rem] font-bold leading-tight md:text-[1.9rem]">{t}</h3>
-                  <p className="mt-2 max-w-md text-[16px] leading-relaxed text-ink-soft">{d}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
-
+        <Hero />
+        <ServiceList onAsk={ask} />
+        <Showcase />
+        <Steps />
         <Area />
-
-        {/* Kontakt */}
-        <section id="kontakt" className="bg-tile pb-28 pt-20 md:pb-32 md:pt-28">
-          <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-[1fr_1.35fr] lg:gap-16">
-            <div>
-              <h2 className={h2}>Erzählen Sie uns, worum es geht.</h2>
-              <p className="mt-5 max-w-md text-[17px] leading-relaxed text-ink-soft">Am schnellsten per Telefon oder WhatsApp. Oder Sie füllen das Formular aus, dann melden wir uns.</p>
-              <div className="mt-8"><DirectContact /></div>
-            </div>
-            <RequestForm preselect={pre} />
-          </div>
+        <section id="kontakt" className="px-4 py-24 md:px-8 md:py-36">
+          <div className="mx-auto max-w-[1120px]" data-in><CouponForm preselect={pre} /></div>
         </section>
       </main>
 
-      <footer className="bg-ink pb-24 text-white md:pb-0">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 text-sm text-white/60 md:flex-row md:items-center md:justify-between md:px-8">
-          <div className="flex flex-col gap-3 text-white md:flex-row md:items-center md:gap-8">
-            <Logo light />
-            <span className="text-white/60">{FIRMA.street}, {FIRMA.city}</span>
-          </div>
-          <div className="flex flex-wrap gap-x-6 gap-y-2">
-            <a href={FIRMA.tel} className="hover:text-white">{FIRMA.phone}</a>
-            <a href={`mailto:${FIRMA.mail}`} className="hover:text-white">{FIRMA.mail}</a>
-            <button onClick={() => setLegal('impressum')} className="hover:text-white">Impressum</button>
-            <button onClick={() => setLegal('datenschutz')} className="hover:text-white">Datenschutz</button>
-          </div>
-        </div>
-      </footer>
+      <Footer onLegal={setLegal} go={go} />
 
-      {/* Schnellkontakt am Handy */}
-      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-line bg-white text-[13px] font-medium transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <a href={FIRMA.tel} className="flex flex-col items-center gap-1 py-2.5"><Phone size={19} className="text-water" />Anrufen</a>
-        <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 py-2.5"><MessageCircle size={19} className="text-[#1faa53]" />WhatsApp</a>
-        <button onClick={() => go('kontakt')} className="flex flex-col items-center gap-1 py-2.5"><ArrowRight size={19} />Anfrage</button>
+      {/* Schnellkontakt am Handy, sobald der Einstieg verlassen ist */}
+      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-2 bg-ink text-[16px] font-semibold text-white transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <a href={FIRMA.tel} className="flex items-center justify-center gap-2 py-4"><Phone size={18} /> Anrufen</a>
+        <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 bg-water py-4"><MessageCircle size={18} /> WhatsApp</a>
       </div>
 
       <LegalModal kind={legal} onClose={() => setLegal(null)} />
@@ -187,89 +71,131 @@ export default function App() {
   )
 }
 
-/** Leistungen: am Desktop eine waagrechte Strecke, die beim Scrollen durchläuft; am Handy untereinander. */
-function Services({ onAsk }: { onAsk: (id: string) => void }) {
-  const section = useRef<HTMLElement>(null)
-  const track = useRef<HTMLDivElement>(null)
-  const [active, setActive] = useState(0)
-  const st = useRef<ScrollTrigger | null>(null)
-
-  useEffect(() => {
-    const mm = gsap.matchMedia()
-    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
-      const dist = () => track.current!.scrollWidth - innerWidth
-      const tw = gsap.to(track.current, {
-        x: () => -dist(), ease: 'none',
-        scrollTrigger: {
-          trigger: section.current, pin: true, scrub: 0.6, start: 'top top', end: () => `+=${dist()}`, invalidateOnRefresh: true,
-          onUpdate: (s) => setActive(Math.min(SERVICES.length - 1, Math.round(s.progress * (SERVICES.length - 1)))),
-        },
-      })
-      st.current = tw.scrollTrigger!
-      return () => { st.current = null }
-    })
-    return () => mm.revert()
-  }, [])
-
-  const jump = (i: number) => {
-    const s = st.current
-    if (s) scrollTo({ top: s.start + (s.end - s.start) * (i / (SERVICES.length - 1)) })
-  }
-
+/** Einstieg: Überschrift auf weißem Grund, rechts das Video in der schrägen Form der Visitenkarte. */
+function Hero() {
   return (
-    <section ref={section} id="leistungen" className="overflow-hidden bg-white py-20 lg:flex lg:h-[100svh] lg:flex-col lg:py-0 lg:pt-24">
-      <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-          <h2 className={h2}>Was wir für Sie machen.</h2>
-          <div className="hidden flex-wrap gap-1.5 lg:flex">
-            {SERVICES.map((s, i) => (
-              <button key={s.id} aria-current={active === i} onClick={() => jump(i)}
-                className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${active === i ? 'bg-ink text-white' : 'text-ink-soft hover:bg-tile'}`}>{s.label}</button>
-            ))}
+    <section className="relative overflow-hidden md:h-[calc(100svh-72px)] md:min-h-[600px]">
+      <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-[10svh] md:justify-center md:px-8 md:pt-0">
+        <div className="md:w-[47%]">
+          <h1 className="t1 rise"><span><span>Heizung und</span></span><span><span>Sanitär.</span></span></h1>
+          <p className="t4 after-rise mt-8 max-w-[30rem] md:text-[19px]">
+            SELLITA aus Gärtringen plant und wartet Heizungen, baut Bäder, findet Lecks und renoviert. Im Umkreis von 100 km.
+          </p>
+          <div className="after-rise mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
+            <a href={FIRMA.tel} className="cut cut-blue"><Phone size={17} /> {FIRMA.phone} anrufen</a>
+            <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="link font-semibold">Oder Fotos per WhatsApp schicken</a>
           </div>
+          <p className="after-rise mt-8 max-w-[30rem] text-muted">
+            <b className="text-signal">Wasser läuft gerade?</b> Hauptwasserhahn zudrehen, Strom im Raum aus, dann anrufen.
+          </p>
         </div>
       </div>
-      <div className="lg:flex lg:flex-1 lg:items-center">
-        <div ref={track} className="mt-10 flex flex-col gap-16 px-4 md:px-8 lg:mt-0 lg:flex-row lg:gap-16 lg:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pr-[8vw]">
-          {SERVICES.map((s) => (
-            <article key={s.id} id={s.id} className="scroll-mt-20 md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-10 lg:w-[min(72vw,1000px)] lg:shrink-0">
-              <div className="aspect-[16/10] overflow-hidden rounded-[22px] bg-tile">{s.clip ? <Clip name={s.clip} /> : <HeatPanel />}</div>
-              <div className="mt-6 md:mt-0">
-                <p className={`text-[15px] font-semibold ${s.id === 'heizung' ? 'text-signal' : 'text-water'}`}>{s.label}</p>
-                <h3 className="wide mt-2 text-[1.7rem] font-bold leading-[1.08] md:text-[2.1rem]">{s.title}</h3>
-                <p className="mt-3 text-[16px] leading-relaxed text-ink-soft">{s.text}</p>
-                <ul className="mt-4 space-y-1.5">
-                  {s.points.map((p) => <li key={p} className="flex items-start gap-2.5 text-[15px]"><Check size={17} className="mt-0.5 shrink-0 text-water" />{p}</li>)}
-                </ul>
-                <button onClick={() => onAsk(s.id)} className={`${btn} mt-6 border border-ink/15 !py-2.5 hover:border-ink/40`}>{s.label} anfragen <ArrowRight size={16} /></button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </div>
-      <div className="mx-auto mt-auto hidden w-full max-w-7xl px-8 pb-8 lg:block">
-        <div className="h-[3px] rounded-full bg-tile"><div className="h-full rounded-full bg-ink transition-[width] duration-300" style={{ width: `${((active + 1) / SERVICES.length) * 100}%` }} /></div>
+      <div className="slant relative mt-10 h-[46svh] [--s:9svh] md:absolute md:inset-y-0 md:left-[52%] md:right-0 md:mt-0 md:h-auto md:[--s:22svh]">
+        <div><div className="shutter h-full"><Clip name="sanitaer" eager /></div></div>
       </div>
     </section>
   )
 }
 
-/** Heizung hat kein Video: Fläche im Stil der Visitenkarte mit Flamme und den drei Leistungen. */
-function HeatPanel() {
+/** Leistungen als zweispaltige Liste; das Vorschaubild ist schräg zugeschnitten wie die Visitenkarte. */
+function ServiceList({ onAsk }: { onAsk: (id: string) => void }) {
   return (
-    <div className="relative h-full w-full bg-white">
-      <div className="absolute inset-y-0 left-0 w-[64%] bg-ink [clip-path:polygon(0_0,100%_0,72%_100%,0_100%)]" />
-      <div className="absolute inset-y-0 left-0 w-[64%] bg-water [clip-path:polygon(100%_0,calc(100%+6px)_0,calc(72%+6px)_100%,72%_100%)]" />
-      <div className="relative flex h-full flex-col justify-center gap-5 p-7 text-white md:p-9">
-        <Flame size={56} strokeWidth={1.6} className="text-signal" fill="currentColor" />
-        <ul className="wide space-y-1 text-[15px] font-bold tracking-[0.08em]">
-          {['PLANUNG', 'MONTAGE', 'WARTUNG'].map((t) => <li key={t}>{t}</li>)}
-        </ul>
+    <section id="leistungen" className="mx-auto max-w-[1440px] px-4 py-24 md:px-8 md:py-40">
+      <div className="flex items-baseline justify-between gap-6" data-in>
+        <h2 className="t2">Leistungen</h2>
+        <p className="text-muted">{SERVICES.length} Leistungen, ein Ansprechpartner</p>
       </div>
-    </div>
+      <ul className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 lg:grid-cols-2" data-in>
+        {SERVICES.map((s) => (
+          <li key={s.id} id={s.id} className="flex min-w-0 gap-5 scroll-mt-24">
+            <div className="slant slant-sm h-[88px] w-[88px] shrink-0 [--s:22%]"><div><img src={poster(s)} alt="" width={88} height={88} className="h-full w-full object-cover" /></div></div>
+            <div className="min-w-0 flex-1">
+              <div className="flex items-baseline justify-between gap-4">
+                <h3 className="t4 min-w-0 font-bold [overflow-wrap:anywhere]">{s.label}</h3>
+                <button onClick={() => onAsk(s.id)} className="link shrink-0 font-semibold text-water">Anfragen</button>
+              </div>
+              <p className="mt-1 max-w-[42ch]">{s.text}</p>
+              <p className={`mt-2 font-medium ${s.id === 'heizung' ? 'text-signal' : 'text-water'}`}>{s.points.join(', ')}</p>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
   )
 }
 
+/** Die Videos: links die Leistungen zum Auswählen, rechts der Clip in der schrägen Form. */
+function Showcase() {
+  const items = SERVICES.filter((s) => s.clip && s.clip !== 'sanitaer')
+  const [i, setI] = useState(0)
+  const s = items[i]
+  return (
+    <section className="bg-tile px-4 py-24 md:px-8 md:py-32">
+      <div className="mx-auto grid max-w-[1440px] gap-8 lg:grid-cols-12 lg:items-end lg:gap-10" data-in>
+        <div className="order-2 min-w-0 lg:order-1 lg:col-span-4">
+          <h2 className="t3 text-muted">So sieht das aus</h2>
+          <div className="mt-3 flex flex-wrap gap-x-6 gap-y-1 lg:mt-2 lg:flex-col lg:gap-1" role="tablist" aria-label="Leistung im Video">
+            {items.map((it, k) => (
+              <button key={it.id} role="tab" aria-selected={k === i} onClick={() => setI(k)}
+                className={`t3 shrink-0 text-left transition-colors duration-200 ${k === i ? 'text-ink' : 'text-muted hover:text-ink'}`}>
+                {it.label}
+              </button>
+            ))}
+          </div>
+          <p className="t4 mt-6 lg:hidden">{s.title}.</p>
+        </div>
+        <div className="order-1 min-w-0 lg:order-2 lg:col-span-8">
+          <div className="slant aspect-[16/10] [--s:12%]"><div><Clip key={s.id} name={s.clip} className="animate-[fade_400ms_ease_both]" /></div></div>
+          <p className="t4 mt-4 hidden text-right lg:block">{s.title}.</p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+const STEPS: [string, string, string][] = [
+  ['Kurz melden', 'Anruf, WhatsApp oder E-Mail. Am besten mit ein paar Fotos vom Schaden oder vom Raum, dann können wir schon vorab einschätzen, was nötig ist.', 'clips/balkon.webp'],
+  ['Termin vor Ort', 'Wir schauen uns alles an, messen nach und besprechen mit Ihnen, was wirklich gemacht werden muss.', 'clips/leck.webp'],
+  ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet. Erst wenn Sie zusagen, geht es los.', 'clips/wohnung.webp'],
+  ['Ausführung', 'Wir arbeiten sauber, halten Sie auf dem Laufenden und übergeben aufgeräumt.', 'clips/bad.webp'],
+]
+
+/** Ablauf als Reihe von Flächen, dunkel nach hell; eine ist offen. */
+function Steps() {
+  const [open, setOpen] = useState(0)
+  return (
+    <section id="ablauf" className="mx-auto max-w-[1440px] px-4 py-24 md:px-8 md:py-40">
+      <div className="grid gap-6 lg:grid-cols-12" data-in>
+        <h2 className="t2 lg:col-span-5">So läuft ein Auftrag</h2>
+        <p className="t4 max-w-[36rem] lg:col-span-5 lg:col-start-7">Keine Überraschungen: Sie wissen vor dem ersten Handgriff, was gemacht wird und was es kostet. Vier Schritte, alle mit derselben Person.</p>
+      </div>
+      <ol className="mt-12 flex flex-col lg:mt-16 lg:h-[520px] lg:flex-row" data-in>
+        {STEPS.map(([t, d, img], k) => {
+          const on = open === k, light = k === 3
+          return (
+            <li key={t} className={`flex transition-[flex-basis] duration-[450ms] ease-[var(--ease-in-out)] ${on ? 'lg:basis-[58%]' : 'lg:basis-[14%]'} ${['bg-step-1', 'bg-step-2', 'bg-step-3', 'bg-step-4'][k]} ${light ? 'text-ink' : 'text-white'} lg:min-w-0`}>
+              {on ? (
+                <div className="flex w-full flex-col gap-6 p-6 md:p-10 lg:flex-row">
+                  <div className="flex flex-1 flex-col justify-between gap-6">
+                    <h3 className="t3">{t}</h3>
+                    <p className="t4 max-w-[36ch]">{d}</p>
+                  </div>
+                  <div className="slant aspect-[4/3] w-full self-end [--s:18%] lg:w-[48%]"><div><img src={img} alt="" width={480} height={360} loading="lazy" className="h-full w-full object-cover" /></div></div>
+                </div>
+              ) : (
+                <button onClick={() => setOpen(k)} aria-expanded={false} className="flex h-16 w-full items-center px-6 text-left font-bold transition-opacity hover:opacity-85 lg:h-full lg:items-end lg:p-6">
+                  <span className="t4 font-bold lg:[writing-mode:vertical-rl] lg:rotate-180">{t}</span>
+                </button>
+              )}
+            </li>
+          )
+        })}
+      </ol>
+    </section>
+  )
+}
+
+/** Einsatzgebiet: dunkles Band mit der blauen Schräge; hier prüft man seinen Ort. */
 function Area() {
   const [q, setQ] = useState('')
   const r = useMemo(() => checkArea(q), [q])
@@ -277,38 +203,82 @@ function Area() {
     .map(([name, pos]) => ({ name: name.replace(/(^|-)\p{L}/gu, (c) => c.toUpperCase()), km: Math.round(distKm([HOME.lat, HOME.lon], pos)) }))
     .filter((c) => c.km > 2 && c.km <= 100).sort((a, b) => a.km - b.km), [])
   return (
-    <section id="einsatzgebiet" className="border-t border-line py-20 md:py-32">
-      <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-8 lg:grid-cols-2 lg:items-start">
-        <div>
-          <h2 className={h2}>Bis zu 100 km rund um Gärtringen.</h2>
-          <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-soft">Vom Kreis Böblingen über Stuttgart und Tübingen bis Pforzheim und Karlsruhe. Prüfen Sie Ihren Ort:</p>
-          <label className="mt-7 block max-w-md">
+    <section id="einsatzgebiet" className="relative overflow-hidden bg-ink px-4 py-24 text-white md:px-8 md:py-36">
+      <div className="absolute inset-y-0 left-[54%] hidden w-[14px] skew-x-[11deg] bg-water lg:block" aria-hidden />
+      <div className="relative mx-auto grid max-w-[1440px] gap-14 lg:grid-cols-12">
+        <div className="lg:col-span-6" data-in>
+          <h2 className="t2">Kommen wir zu Ihnen?</h2>
+          <p className="t4 mt-6 max-w-[34rem] text-white/85">Wir fahren bis zu 100 km rund um Gärtringen, vom Kreis Böblingen bis Karlsruhe. Geben Sie Ihre PLZ oder Ihren Ort ein:</p>
+          <label className="mt-8 block max-w-[30rem]">
             <span className="sr-only">PLZ oder Ort</span>
-            <div className="relative">
-              <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-water" />
-              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="PLZ oder Ort, z. B. 72070 Tübingen"
-                className="w-full rounded-full border border-line bg-white py-3.5 pl-11 pr-4 text-[16px] outline-none transition placeholder:text-ink-soft/60 focus:border-water" />
-            </div>
+            <span className="relative block">
+              <MapPin size={20} className="absolute left-4 top-1/2 -translate-y-1/2 text-water" />
+              <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="z. B. 72070 oder Tübingen"
+                className="h-16 w-full bg-white pl-12 pr-4 text-[18px] text-ink outline-none placeholder:text-muted" />
+            </span>
           </label>
-          <p className="mt-3 min-h-6 text-[15px]" aria-live="polite">
+          <p className="t4 mt-4 min-h-8 font-semibold" aria-live="polite">
             {q.trim().length > 2 && (r.known
-              ? r.inside
-                ? <span className="font-medium text-emerald-700">Ja, das liegt in unserem Einsatzgebiet{r.km ? `, ca. ${r.km} km von Gärtringen` : ''}.</span>
-                : <span className="font-medium text-amber-700">Ca. {r.km} km, etwas weiter weg. Rufen Sie an, oft geht es trotzdem.</span>
-              : <span className="text-ink-soft">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
+              ? r.inside ? <>Ja, das liegt im Einsatzgebiet{r.km ? `, ca. ${r.km} km von Gärtringen` : ''}.</> : <>Ca. {r.km} km, etwas weiter weg. Rufen Sie an, oft geht es trotzdem.</>
+              : <span className="font-normal text-white/80">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
           </p>
         </div>
-        <div>
-          <h3 className="text-[15px] font-semibold text-ink-soft">Entfernung ab Gärtringen</h3>
-          <ul className="mt-3 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
-            {cities.map((c) => (
-              <li key={c.name} className="flex items-baseline justify-between border-b border-line py-2.5 text-[15px]">
-                <span>{c.name}</span><span className="tabular-nums text-ink-soft">{c.km} km</span>
-              </li>
-            ))}
+        <div className="lg:col-span-5 lg:col-start-8" data-in>
+          <div className="slant aspect-[16/9] [--s:12%]"><div><Clip name="rundgang" /></div></div>
+          <h3 className="t4 mt-8 font-bold">Entfernung ab Gärtringen</h3>
+          <ul className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2.5">
+            {cities.map((c) => <li key={c.name} className="flex justify-between gap-3"><span>{c.name}</span><span className="tabular-nums text-white/75">{c.km} km</span></li>)}
           </ul>
         </div>
       </div>
     </section>
+  )
+}
+
+/** Schluss: der Name aus Blöcken gebaut, darunter Links und Kontakt. */
+function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: string) => void }) {
+  const blocks: [string, number, string][] = [['S', 100, 'bg-ink'], ['E', 74, 'bg-ink'], ['L', 88, 'bg-water'], ['L', 64, 'bg-ink'], ['I', 94, 'bg-ink'], ['T', 70, 'bg-signal'], ['A', 84, 'bg-ink']]
+  return (
+    <footer className="bg-tile px-4 pb-28 pt-20 md:px-8 md:pb-10 md:pt-28">
+      <div className="mx-auto max-w-[1440px]">
+        <div className="flex h-[22svh] items-end gap-1 md:h-[34svh]" aria-label="SELLITA" role="img">
+          {blocks.map(([ch, h, bg], k) => (
+            <div key={k} className={`${bg} relative flex flex-1 items-end justify-center overflow-hidden`} style={{ height: `${h}%` }}>
+              <span aria-hidden className="translate-y-[12%] text-[clamp(56px,15vw,230px)] font-black leading-[0.8] text-tile [font-variation-settings:'wdth'_125]">{ch}</span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-14 grid gap-10 md:grid-cols-12">
+          <div className="grid grid-cols-2 gap-8 md:col-span-8 md:grid-cols-3">
+            <div>
+              <h2 className="t5 font-bold">Leistungen</h2>
+              <ul className="mt-3 space-y-1.5">{SERVICES.slice(0, 5).map((s) => <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); go(s.id) }} className="link">{s.label}</a></li>)}</ul>
+            </div>
+            <div>
+              <h2 className="t5 font-bold">Seite</h2>
+              <ul className="mt-3 space-y-1.5">
+                {[['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Anfrage']].map(([id, l]) => <li key={id}><a href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="link">{l}</a></li>)}
+              </ul>
+            </div>
+            <div>
+              <h2 className="t5 font-bold">Rechtliches</h2>
+              <ul className="mt-3 space-y-1.5">
+                <li><button onClick={() => onLegal('impressum')} className="link">Impressum</button></li>
+                <li><button onClick={() => onLegal('datenschutz')} className="link">Datenschutz</button></li>
+              </ul>
+            </div>
+          </div>
+          <address className="not-italic md:col-span-4">
+            <p className="font-bold">SELLITA Heizung &amp; Sanitär</p>
+            <p className="mt-3">{FIRMA.street}<br />{FIRMA.city}</p>
+            <p className="mt-3"><a href={FIRMA.tel} className="link">{FIRMA.phone}</a><br /><a href={`mailto:${FIRMA.mail}`} className="link">{FIRMA.mail}</a></p>
+          </address>
+        </div>
+        <div className="mt-14 flex flex-wrap items-center justify-between gap-4 text-muted">
+          <p>© {new Date().getFullYear()} SELLITA. Foto Heizkörper: „Radiator“ von ri, CC0, via Wikimedia Commons.</p>
+          <button onClick={() => scrollTo({ top: 0, behavior: 'smooth' })} className="cut !px-6 !py-2.5">Nach oben</button>
+        </div>
+      </div>
+    </footer>
   )
 }

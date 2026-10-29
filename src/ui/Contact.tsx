@@ -1,55 +1,43 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Check, Copy, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
-import { FIRMA, MAPS, SERVICES, checkArea } from '../data'
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { Check, Copy } from 'lucide-react'
+import { FIRMA, SERVICES, checkArea } from '../data'
 
-const inp = 'w-full rounded-xl border border-line bg-white px-4 py-3 text-[16px] outline-none transition placeholder:text-ink-soft/60 focus:border-water'
+// Felder als hellere Fläche im Blau des Coupons, ohne Rahmen
+const inp = 'block h-[54px] w-full bg-white/14 px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/80 focus:bg-white/24'
 
-export function DirectContact() {
-  const rows = [
-    { href: FIRMA.tel, icon: <Phone size={18} />, label: 'Anrufen', value: FIRMA.phone },
-    { href: FIRMA.wa, icon: <MessageCircle size={18} />, label: 'WhatsApp', value: 'Nachricht oder Fotos schicken', ext: true },
-    { href: `mailto:${FIRMA.mail}`, icon: <Mail size={18} />, label: 'E-Mail', value: FIRMA.mail },
-    { href: MAPS, icon: <MapPin size={18} />, label: 'Adresse', value: `${FIRMA.street}, ${FIRMA.city}`, ext: true },
-  ]
-  return (
-    <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
-      {rows.map((r) => (
-        <li key={r.label}>
-          <a href={r.href} {...(r.ext ? { target: '_blank', rel: 'noreferrer' } : {})} className="flex items-center gap-4 px-5 py-4 transition hover:bg-tile/60">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tile text-water">{r.icon}</span>
-            <span className="min-w-0">
-              <span className="block text-[13px] text-ink-soft">{r.label}</span>
-              <span className="block truncate text-[15px] font-medium">{r.value}</span>
-            </span>
-          </a>
-        </li>
-      ))}
-    </ul>
-  )
-}
-
-export function RequestForm({ preselect }: { preselect: { id: string; n: number } | null }) {
-  const [sel, setSel] = useState<string[]>([])
-  const [f, setF] = useState({ name: '', tel: '', mail: '', ort: '', msg: '' })
+/** Anfrage als Coupon zum Abtrennen: links die Überschrift, rechts die Felder. Abgeschickt wird per WhatsApp oder E-Mail. */
+export function CouponForm({ preselect }: { preselect: { id: string; n: number } | null }) {
+  const [service, setService] = useState('')
+  const [f, setF] = useState({ name: '', reach: '', ort: '', msg: '' })
   const [tried, setTried] = useState(false)
   const [copied, setCopied] = useState(false)
-  useEffect(() => { if (preselect) setSel((s) => (s.includes(preselect.id) ? s : [...s, preselect.id])) }, [preselect])
+  const card = useRef<HTMLFormElement>(null)
+  const perf = useRef<HTMLDivElement>(null)
+  useEffect(() => { if (preselect) setService(preselect.id) }, [preselect])
 
-  const labels = SERVICES.filter((s) => sel.includes(s.id)).map((s) => s.label)
+  // Am Handy liegen die Kerben links und rechts auf Höhe der Perforation
+  useLayoutEffect(() => {
+    const set = () => card.current?.style.setProperty('--cut-y', `${perf.current!.offsetTop + perf.current!.offsetHeight / 2}px`)
+    set()
+    const ro = new ResizeObserver(set)
+    ro.observe(card.current!)
+    return () => ro.disconnect()
+  }, [])
+
+  const label = SERVICES.find((s) => s.id === service)?.label
   const area = useMemo(() => checkArea(f.ort), [f.ort])
-  const missing = !f.name.trim() ? 'Bitte Ihren Namen angeben.' : !f.tel.trim() && !f.mail.trim() ? 'Bitte Telefon oder E-Mail angeben, damit wir Sie erreichen.' : ''
+  const missing = !f.name.trim() ? 'Bitte Ihren Namen angeben.' : !f.reach.trim() ? 'Bitte Telefon oder E-Mail angeben, damit wir Sie erreichen.' : ''
   const text = [
     'Hallo SELLITA, ich habe eine Anfrage:',
     '',
-    `Leistung: ${labels.join(', ') || 'noch offen'}`,
+    `Leistung: ${label ?? 'noch offen'}`,
     ...(f.ort ? [`Ort: ${f.ort}`] : []),
     ...(f.msg ? [`Beschreibung: ${f.msg}`] : []),
     '',
     `Name: ${f.name}`,
-    ...(f.tel ? [`Telefon: ${f.tel}`] : []),
-    ...(f.mail ? [`E-Mail: ${f.mail}`] : []),
+    `Erreichbar unter: ${f.reach}`,
   ].join('\n')
-  const subject = `Anfrage${labels.length ? ': ' + labels.join(', ') : ''} – ${f.name || 'Website'}`
+  const subject = `Anfrage${label ? ': ' + label : ''} – ${f.name || 'Website'}`
   const mailto = `mailto:${FIRMA.mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
   const wa = `${FIRMA.wa}?text=${encodeURIComponent(text)}`
 
@@ -59,60 +47,50 @@ export function RequestForm({ preselect }: { preselect: { id: string; n: number 
   }
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="rounded-3xl border border-line bg-white p-5 md:p-8" data-lenis-prevent>
-      <fieldset>
-        <legend className="mb-3 text-[15px] font-semibold">Worum geht es?</legend>
-        <div className="flex flex-wrap gap-2">
-          {SERVICES.map((s) => {
-            const on = sel.includes(s.id)
-            return (
-              <button type="button" key={s.id} aria-pressed={on} onClick={() => setSel(on ? sel.filter((x) => x !== s.id) : [...sel, s.id])}
-                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition ${on ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink/40'}`}>
-                {on && <Check size={14} />}{s.label}
-              </button>
-            )
-          })}
+    <form ref={card} onSubmit={(e) => e.preventDefault()} data-lenis-prevent
+      className="coupon relative grid bg-water text-white lg:grid-cols-[46%_54%]">
+      <div className="flex flex-col justify-between gap-6 p-6 pb-8 md:p-12">
+        <h2 className="t3 wide uppercase">Anfrage<br />an SELLITA</h2>
+        <p className="t5 max-w-sm">
+          Wir melden uns per Telefon oder WhatsApp zurück. Direkt geht es unter{' '}
+          <a href={FIRMA.tel} className="link font-semibold">{FIRMA.phone}</a> oder{' '}
+          <a href={`mailto:${FIRMA.mail}`} className="link font-semibold">{FIRMA.mail}</a>.
+        </p>
+      </div>
+      <div ref={perf} className="perf mx-6 h-[5px] lg:absolute lg:inset-y-6 lg:left-[46%] lg:mx-0 lg:h-auto lg:w-[5px] lg:-translate-x-1/2" aria-hidden />
+      <div className="flex flex-col gap-2.5 p-6 pt-8 md:p-12">
+        <label><span className="sr-only">Leistung</span>
+          <select value={service} onChange={(e) => setService(e.target.value)} className={`${inp} appearance-none`}>
+            <option value="" className="text-ink">Worum geht es? (Leistung wählen)</option>
+            {SERVICES.map((s) => <option key={s.id} value={s.id} className="text-ink">{s.label}</option>)}
+          </select>
+        </label>
+        <label><span className="sr-only">Name</span>
+          <input className={inp} placeholder="Ihr Name" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
+        </label>
+        <label><span className="sr-only">Telefon oder E-Mail</span>
+          <input className={inp} placeholder="Telefon oder E-Mail" autoComplete="tel" value={f.reach} onChange={(e) => setF({ ...f, reach: e.target.value })} />
+        </label>
+        <label><span className="sr-only">PLZ oder Ort des Objekts</span>
+          <input className={inp} placeholder="PLZ oder Ort des Objekts" autoComplete="postal-code" aria-describedby="ort-hint" value={f.ort} onChange={(e) => setF({ ...f, ort: e.target.value })} />
+          <span id="ort-hint" className="mt-1 block min-h-6 text-[16px]" aria-live="polite">
+            {f.ort.trim().length > 2 && area.known && (area.inside ? `Liegt in unserem Einsatzgebiet${area.km ? `, ca. ${area.km} km` : ''}.` : `Etwa ${area.km} km entfernt. Rufen Sie kurz an, dann klären wir das.`)}
+          </span>
+        </label>
+        <label><span className="sr-only">Beschreibung</span>
+          <textarea className={`${inp} h-28 resize-none py-3`} placeholder="Was ist passiert bzw. was soll gemacht werden?" value={f.msg} onChange={(e) => setF({ ...f, msg: e.target.value })} />
+        </label>
+        {tried && missing && <p className="font-semibold" role="alert">{missing}</p>}
+        <a href={wa} target="_blank" rel="noreferrer" onClick={guard}
+          className="mt-2 flex h-14 items-center justify-center bg-ink font-bold transition-[background-color,transform] duration-150 active:scale-[.98] hover:bg-[#15171b]">
+          Per WhatsApp senden
+        </a>
+        <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-1">
+          <a href={mailto} onClick={guard} className="link font-semibold">Lieber per E-Mail senden</a>
+          <button type="button" onClick={() => (missing ? setTried(true) : copy())} className="link flex items-center gap-1.5">
+            {copied ? <Check size={16} /> : <Copy size={16} />}{copied ? 'Kopiert' : 'Text kopieren'}
+          </button>
         </div>
-      </fieldset>
-
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
-        <label className="sm:col-span-2"><span className="sr-only">Name</span>
-          <input className={inp} placeholder="Ihr Name *" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
-        </label>
-        <label><span className="sr-only">Telefon</span>
-          <input className={inp} placeholder="Telefon" inputMode="tel" autoComplete="tel" value={f.tel} onChange={(e) => setF({ ...f, tel: e.target.value })} />
-        </label>
-        <label><span className="sr-only">E-Mail</span>
-          <input className={inp} placeholder="E-Mail" type="email" autoComplete="email" value={f.mail} onChange={(e) => setF({ ...f, mail: e.target.value })} />
-        </label>
-        <label className="sm:col-span-2"><span className="sr-only">PLZ oder Ort</span>
-          <input className={inp} placeholder="PLZ oder Ort des Objekts" autoComplete="postal-code" value={f.ort} onChange={(e) => setF({ ...f, ort: e.target.value })} />
-          {f.ort.trim().length > 2 && area.known && (
-            <span className={`mt-1.5 block text-[13px] ${area.inside ? 'text-emerald-700' : 'text-amber-700'}`}>
-              {area.inside ? `Liegt in unserem Einsatzgebiet${area.km ? ` (ca. ${area.km} km)` : ''}.` : `Etwa ${area.km} km entfernt – rufen Sie kurz an, dann klären wir das.`}
-            </span>
-          )}
-        </label>
-        <label className="sm:col-span-2"><span className="sr-only">Beschreibung</span>
-          <textarea className={inp} rows={4} placeholder="Was ist passiert bzw. was soll gemacht werden?" value={f.msg} onChange={(e) => setF({ ...f, msg: e.target.value })} />
-        </label>
-      </div>
-
-      {tried && missing && <p className="mt-3 text-sm font-medium text-amber-700" role="alert">{missing}</p>}
-
-      <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <a href={wa} target="_blank" rel="noreferrer" onClick={guard} className="flex items-center justify-center gap-2 rounded-full bg-[#25d366] px-4 py-3.5 text-[15px] font-semibold text-[#0b1a10] transition hover:brightness-95">
-          <MessageCircle size={18} /> Per WhatsApp senden
-        </a>
-        <a href={mailto} onClick={guard} className="flex items-center justify-center gap-2 rounded-full bg-water px-4 py-3.5 text-[15px] font-semibold text-white transition hover:bg-water-deep">
-          <Mail size={18} /> Per E-Mail senden
-        </a>
-      </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[13px] text-ink-soft">
-        <span>Fotos vom Schaden am besten direkt per WhatsApp mitschicken.</span>
-        <button type="button" onClick={() => (missing ? setTried(true) : copy())} className="flex items-center gap-1.5 text-ink-soft underline-offset-4 hover:text-ink hover:underline">
-          {copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Kopiert' : 'Text kopieren'}
-        </button>
       </div>
     </form>
   )

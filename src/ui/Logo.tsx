@@ -1,6 +1,6 @@
 /** Haus mit Heizkörper (rot) und Wasserhahn/Tropfen (blau), nach dem Zeichen auf der Visitenkarte. */
 export function HouseIcon({ size = 32, light = false }: { size?: number; light?: boolean }) {
-  const stroke = light ? '#c9ced6' : '#5a5f68'
+  const stroke = light ? '#c9ced6' : '#555a63'
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" aria-hidden fill="none">
       <path d="M4 19 20 5l16 14" stroke={stroke} strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round" />
@@ -18,8 +18,8 @@ export function Logo({ light = false }: { light?: boolean }) {
     <div className="flex items-center gap-2.5">
       <HouseIcon size={34} light={light} />
       <div className="leading-none">
-        <div className="display text-[1.35rem] !tracking-[0.02em]">SELLITA</div>
-        <div className="wide mt-1 text-[10px] font-bold tracking-[0.14em]"><span className="text-signal">HEIZUNG</span> <span className={light ? 'text-white/50' : 'text-ink-soft'}>&amp;</span> <span className="text-water">SANITÄR</span></div>
+        <div className="text-[24px] font-extrabold leading-none tracking-[0.01em] [font-variation-settings:'wdth'_125]">SELLITA</div>
+        <div className="wide mt-1 text-[13px] font-bold tracking-[0.06em]"><span className="text-signal">HEIZUNG</span> <span className={light ? 'text-white/60' : 'text-muted'}>&amp;</span> <span className="text-water">SANITÄR</span></div>
       </div>
     </div>
   )

@@ -2,51 +2,119 @@
 
 @theme {
   --font-sans: 'Archivo Variable', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  /* Farben der Visitenkarte: Anthrazit, Weiß, Blau (Sanitär), Rot (Heizung) */
   --color-ink: #25282e;
-  --color-ink-soft: #5a5f68;
-  --color-tile: #f1f3f5;
-  --color-line: #d8e0e6;
+  --color-muted: #555a63;
+  --color-tile: #eff1f3;
   --color-water: #1677c4;
   --color-water-deep: #0f5c99;
   --color-signal: #d7262e;
+  /* Ablauf: ein Blau von dunkel nach hell */
+  --color-step-1: #10304f;
+  --color-step-2: #154d80;
+  --color-step-3: #1677c4;
+  --color-step-4: #a9cdee;
 }
+
+:root {
+  /* fünf Schriftgrößen, mehr nicht */
+  --t1: clamp(44px, 6.1vw, 96px);
+  --t2: clamp(34px, 3.8vw, 58px);
+  --t3: clamp(24px, 2.3vw, 34px);
+  --t4: 18px;
+  --t5: 16px;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --ease-soft: cubic-bezier(0.33, 1, 0.68, 1);
+}
+@media (max-width: 767px) { :root { --t1: 11vw; } }
 
 html, body, #root { margin: 0; background: #fff; color: var(--color-ink); }
 html.lenis, html.lenis body { height: auto; }
-body { font-family: var(--font-sans); font-variation-settings: 'wdth' 100; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
+body { font-family: var(--font-sans); font-size: var(--t5); font-variation-settings: 'wdth' 100; -webkit-font-smoothing: antialiased; overflow-x: hidden; }
 ::selection { background: var(--color-water); color: #fff; }
-:focus-visible { outline: 2px solid var(--color-water); outline-offset: 3px; border-radius: 4px; }
+:focus-visible { outline: 3px solid var(--color-water); outline-offset: 3px; }
 
-/* Überschriften in breiter Archivo: wirkt wie geprägte Schrift auf Werkzeug */
-.display { font-variation-settings: 'wdth' 122; font-weight: 760; letter-spacing: -0.025em; line-height: 0.98; }
+.t1 { font-size: var(--t1); font-variation-settings: 'wdth' 118; font-weight: 800; letter-spacing: -0.03em; line-height: 0.95; }
+.t2 { font-size: var(--t2); font-variation-settings: 'wdth' 116; font-weight: 780; letter-spacing: -0.025em; line-height: 1; }
+.t3 { font-size: var(--t3); font-variation-settings: 'wdth' 110; font-weight: 720; letter-spacing: -0.015em; line-height: 1.1; }
+.t4 { font-size: var(--t4); line-height: 1.55; }
+.t5 { font-size: var(--t5); line-height: 1.55; }
 .wide { font-variation-settings: 'wdth' 112; }
 
-/* Wie auf der Visitenkarte: anthrazit Fläche mit schräger Kante und blauer Linie */
-.card-slant { background: var(--color-ink); clip-path: polygon(0 0, 100% 0, 100% calc(100% - 9vw - 6px), 0 calc(100% - 6px)); }
-.card-line { background: var(--color-water); clip-path: polygon(0 calc(100% - 6px), 100% calc(100% - 9vw - 6px), 100% calc(100% - 9vw), 0 100%); }
-@media (min-width: 1024px) {
-  .card-slant { clip-path: polygon(16% 0, 100% 0, 100% 100%, 0 100%); }
-  .card-line { clip-path: polygon(calc(16% - 7px) 0, 16% 0, 0 100%, -7px 100%); }
+/*
+ * Das eine Motiv: die schräge Kante der Visitenkarte (anthrazit Fläche, blaue Linie).
+ * .slant schneidet ein Bild mit schräger linker Kante zu; die blaue Linie ist der Rand, der hinter dem Bild stehen bleibt.
+ * --s = wie weit die Kante unten nach rechts läuft (in % der Breite).
+ */
+.slant { --s: 14%; --edge: 9px; background: var(--color-water); clip-path: polygon(0 0, 100% 0, 100% 100%, var(--s) 100%); }
+.slant > * { height: 100%; clip-path: polygon(var(--edge) 0, 100% 0, 100% 100%, calc(var(--s) + var(--edge)) 100%); background: var(--color-ink); }
+.slant-sm { --s: 22%; --edge: 4px; }
+
+/* Knopf in derselben Schräge */
+.cut {
+  display: inline-flex; align-items: center; justify-content: center; gap: .55rem;
+  padding: 15px 34px; font-weight: 700; font-size: var(--t5);
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 100%, 14px 100%);
+  background: var(--color-ink); color: #fff;
+  transition: transform 140ms var(--ease-out), background-color 180ms ease;
+}
+.cut:active { transform: scale(.97); }
+.cut-blue { background: var(--color-water); }
+@media (hover: hover) and (pointer: fine) {
+  .cut:hover { background: var(--color-water); }
+  .cut-blue:hover { background: var(--color-water-deep); }
 }
 
-/* Fliesenraster als Hintergrund im Einstieg */
-.tiles {
-  background-color: var(--color-tile);
-  background-image:
-    linear-gradient(rgba(37,40,46,.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(37,40,46,.05) 1px, transparent 1px);
-  background-size: 64px 64px;
-  background-position: -1px -1px;
-}
+/* Aufzählungszeichen: die Schräge in Textgröße */
+.tick { display: inline-block; width: 9px; height: 13px; flex-shrink: 0; background: var(--color-water); clip-path: polygon(0 0, 55% 0, 100% 100%, 45% 100%); }
 
-/* Einstieg: Zeilen steigen einmalig beim Laden auf */
-.rise > * { display: block; overflow: hidden; }
-.rise > * > span { display: block; animation: rise 1s cubic-bezier(.2,.75,.15,1) both; }
-.rise > *:nth-child(2) > span { animation-delay: .09s; }
-.rise > *:nth-child(3) > span { animation-delay: .18s; }
+.link { text-decoration: underline; text-decoration-color: transparent; text-underline-offset: .2em; text-decoration-thickness: .07em; transition: text-decoration-color 180ms ease, color 180ms ease; }
+@media (hover: hover) and (pointer: fine) { .link:hover { text-decoration-color: currentColor; } }
+
+/* Einstieg: das Video öffnet sich einmal von rechts wie ein Rollladen */
+@media (prefers-reduced-motion: no-preference) {
+  .shutter { animation: shutter 1200ms var(--ease-in-out) 150ms both; }
+  .shutter video, .shutter img { animation: settle 1600ms var(--ease-soft) 150ms both; }
+  .rise > span { display: block; overflow: hidden; }
+  .rise > span > span { display: block; animation: rise 900ms var(--ease-expo) both; }
+  .rise > span:nth-child(2) > span { animation-delay: 90ms; }
+  .after-rise { animation: fade 700ms var(--ease-out) 300ms both; }
+}
+@keyframes shutter { from { clip-path: inset(0 0 0 100%); } to { clip-path: inset(0); } }
+@keyframes settle { from { transform: scale(1.12); } }
 @keyframes rise { from { transform: translateY(105%); } }
-.fade-late { animation: fade 1s .45s ease both; }
-@keyframes fade { from { opacity: 0; transform: translateY(10px); } }
+@keyframes fade { from { opacity: 0; transform: translateY(16px); } }
+
+/* Teile eines Abschnitts kommen nacheinander (App setzt .is-in); ohne Skript bleibt alles sichtbar */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-in] > * { opacity: 0; transform: translateY(24px); transition: opacity 700ms var(--ease-out), transform 800ms var(--ease-expo); }
+  .js [data-in].is-in > * { opacity: 1; transform: none; }
+  .js [data-in].is-in > *:nth-child(2) { transition-delay: 80ms; }
+  .js [data-in].is-in > *:nth-child(3) { transition-delay: 160ms; }
+  .js [data-in].is-in > *:nth-child(4) { transition-delay: 240ms; }
+  .js [data-in].is-in > *:nth-child(n+5) { transition-delay: 300ms; }
+}
+
+/* Kontakt-Coupon: Kerben oben und unten (Handy: links und rechts), Perforation dazwischen */
+.coupon {
+  --notch: 14px;
+  -webkit-mask: radial-gradient(circle var(--notch) at 46% 0, #0000 98%, #000) top / 100% 51% no-repeat, /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+                radial-gradient(circle var(--notch) at 46% 100%, #0000 98%, #000) bottom / 100% 51% no-repeat; /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+          mask: radial-gradient(circle var(--notch) at 46% 0, #0000 98%, #000) top / 100% 51% no-repeat, /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+                radial-gradient(circle var(--notch) at 46% 100%, #0000 98%, #000) bottom / 100% 51% no-repeat; /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+}
+.perf { background-image: radial-gradient(circle 2.5px, #fff 98%, #0000); background-size: 5px 14px; background-repeat: repeat-y; background-position: center; } /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+@media (max-width: 1023px) {
+  .coupon {
+    -webkit-mask: radial-gradient(circle var(--notch) at 0 var(--cut-y, 50%), #0000 98%, #000) left / 51% 100% no-repeat, /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+                  radial-gradient(circle var(--notch) at 100% var(--cut-y, 50%), #0000 98%, #000) right / 51% 100% no-repeat; /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+            mask: radial-gradient(circle var(--notch) at 0 var(--cut-y, 50%), #0000 98%, #000) left / 51% 100% no-repeat, /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+                  radial-gradient(circle var(--notch) at 100% var(--cut-y, 50%), #0000 98%, #000) right / 51% 100% no-repeat; /* taste-skill-ignore: Kerben/Perforation, keine Farbfläche */
+  }
+  .perf { background-size: 14px 5px; background-repeat: repeat-x; }
+}
 
 .modal-in { animation: fade .25s ease; }
 

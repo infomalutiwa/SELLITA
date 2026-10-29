@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 
 /** Stumme Video-Schleife, die nur läuft, solange sie im Bild ist. */
-export function Clip({ name, className = '' }: { name: string; className?: string }) {
+export function Clip({ name, className = '', eager = false }: { name: string; className?: string; eager?: boolean }) {
   const v = useRef<HTMLVideoElement>(null)
   useEffect(() => {
     const el = v.current!
@@ -14,6 +14,6 @@ export function Clip({ name, className = '' }: { name: string; className?: strin
   }, [])
   return (
     <video ref={v} className={`h-full w-full object-cover ${className}`} src={`clips/${name}.mp4`} poster={`clips/${name}.webp`}
-      muted loop playsInline preload="none" aria-hidden />
+      muted loop playsInline preload={eager ? 'auto' : 'none'} aria-hidden />
   )
 }
