@@ -357,7 +357,8 @@ cy.samples = SAMPLES
 cy.adaptive_threshold = 0.03
 cy.use_denoising = True
 cy.denoiser = 'OPENIMAGEDENOISE'
-cy.max_bounces = 6; cy.diffuse_bounces = 3; cy.glossy_bounces = 3; cy.transmission_bounces = 6; cy.transparent_max_bounces = 16
+# viele transparente Schichten (Schnitt-Fassade, Glas) -> hohe Gesamtgrenze, sonst bleiben Innenräume schwarz
+cy.max_bounces = 32; cy.diffuse_bounces = 3; cy.glossy_bounces = 3; cy.transmission_bounces = 6; cy.transparent_max_bounces = 64
 cy.caustics_reflective = False; cy.caustics_refractive = False
 cy.sample_clamp_indirect = 4.0
 scene.render.use_persistent_data = True
