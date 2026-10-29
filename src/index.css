@@ -49,7 +49,7 @@ body { font-family: var(--font-sans); font-size: var(--t5); font-variation-setti
  * --s = wie weit die Kante unten nach rechts läuft (in % der Breite).
  */
 .slant { --s: 14%; --edge: 9px; background: var(--color-water); clip-path: polygon(0 0, 100% 0, 100% 100%, var(--s) 100%); }
-.slant > * { height: 100%; clip-path: polygon(var(--edge) 0, 100% 0, 100% 100%, calc(var(--s) + var(--edge)) 100%); background: var(--color-ink); }
+.slant > * { height: 100%; overflow: hidden; clip-path: polygon(var(--edge) 0, 100% 0, 100% 100%, calc(var(--s) + var(--edge)) 100%); background: var(--color-ink); }
 .slant-sm { --s: 22%; --edge: 4px; }
 
 /* Knopf in derselben Schräge */
@@ -120,4 +120,44 @@ body { font-family: var(--font-sans); font-size: var(--t5); font-variation-setti
 
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-delay: 0s !important; transition-duration: .01ms !important; }
+}
+
+/* Logo wie auf der Karte: anthrazit Fläche, rechte Kante schräg mit blauer Linie */
+.badge { background: var(--color-water); clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 100%, 0 100%); }
+.badge > * { background: var(--color-ink); clip-path: polygon(0 0, calc(100% - 26px) 0, calc(100% - 4px) 100%, 0 100%); }
+.logo-icon .heat path, .logo-icon .drop { transform-box: fill-box; transform-origin: 50% 0; }
+@media (prefers-reduced-motion: no-preference) {
+  .logo-icon .draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: draw 1300ms var(--ease-in-out) 200ms forwards; }
+  .logo-icon .heat path { animation: heat 2.4s ease-in-out infinite; }
+  .logo-icon .drop { animation: drop 2.8s cubic-bezier(.5, 0, .75, .3) 1.2s infinite both; }
+}
+@keyframes draw { to { stroke-dashoffset: 0; } }
+@keyframes heat { 0%, 100% { opacity: .35; transform: translateY(10%); } 50% { opacity: 1; transform: translateY(-8%); } }
+@keyframes drop {
+  0% { opacity: 0; transform: translateY(-30%) scale(.4); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  60% { opacity: 1; transform: translateY(80%) scale(1); }
+  70%, 100% { opacity: 0; transform: translateY(95%) scale(1.1, .5); }
+}
+
+/* Bilder in der Schräge: wandern beim Scrollen leicht im Rahmen (App setzt --drift) */
+[data-drift] { height: 100%; transform: translate3d(0, var(--drift, 0%), 0) scale(1.1); will-change: transform; }
+@media (prefers-reduced-motion: reduce) { [data-drift] { transform: none; } }
+
+/* Wechsel des Videos: öffnet sich von rechts */
+@media (prefers-reduced-motion: no-preference) {
+  .swap { animation: shutter 700ms var(--ease-in-out) both; }
+  .swap video { animation: settle 1100ms var(--ease-soft) both; }
+  .panel-in > * { animation: fade 600ms var(--ease-out) both; }
+  .panel-in > *:nth-child(2) { animation-delay: 90ms; }
+}
+
+/* Vorschaubilder der Leistungen reagieren auf den Zeiger */
+.thumb img { transition: transform 500ms var(--ease-out); }
+@media (hover: hover) and (pointer: fine) { li:hover > .thumb img { transform: scale(1.1); } }
+
+/* Fußzeile: die Blöcke wachsen nacheinander von unten */
+@media (prefers-reduced-motion: no-preference) {
+  .js [data-grow] > * { transform: scaleY(0); transform-origin: 50% 100%; transition: transform 1000ms var(--ease-expo); }
+  .js [data-grow].is-in > * { transform: none; }
 }

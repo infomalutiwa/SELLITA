@@ -25,8 +25,21 @@ export default function App() {
     addEventListener('scroll', onScroll, { passive: true })
     // Teile eines Abschnitts nacheinander einblenden, einmal
     const io = new IntersectionObserver((es) => es.forEach((e) => { if (e.isIntersecting) { e.target.classList.add('is-in'); io.unobserve(e.target) } }), { threshold: 0.2 })
-    document.querySelectorAll('[data-in]').forEach((el) => io.observe(el))
-    return () => { cancelAnimationFrame(raf); l.destroy(); io.disconnect(); removeEventListener('scroll', onScroll) }
+    document.querySelectorAll('[data-in], [data-grow]').forEach((el) => io.observe(el))
+    // Bilder wandern beim Scrollen leicht in ihrem Rahmen (höchstens 4 %)
+    let drift = 0
+    const moveAll = () => {
+      drift = 0
+      document.querySelectorAll<HTMLElement>('[data-drift]').forEach((el) => {
+        const r = el.parentElement!.getBoundingClientRect()
+        if (r.bottom < 0 || r.top > innerHeight) return
+        const p = (r.top + r.height / 2 - innerHeight / 2) / (innerHeight / 2 + r.height / 2)
+        el.style.setProperty('--drift', `${(p * -4).toFixed(2)}%`)
+      })
+    }
+    const onDrift = () => { if (!drift) drift = requestAnimationFrame(moveAll) }
+    if (!reduce) { addEventListener('scroll', onDrift, { passive: true }); moveAll() }
+    return () => { cancelAnimationFrame(raf); l.destroy(); io.disconnect(); removeEventListener('scroll', onScroll); removeEventListener('scroll', onDrift) }
   }, [])
 
   const go = useCallback((id: string) => {
@@ -108,7 +121,7 @@ function ServiceList({ onAsk }: { onAsk: (id: string) => void }) {
       <ul className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 lg:grid-cols-2" data-in>
         {SERVICES.map((s) => (
           <li key={s.id} id={s.id} className="flex min-w-0 gap-5 scroll-mt-24">
-            <div className="slant slant-sm h-[88px] w-[88px] shrink-0 [--s:22%]"><div><img src={poster(s)} alt="" width={88} height={88} className="h-full w-full object-cover" /></div></div>
+            <div className="thumb slant slant-sm h-[88px] w-[88px] shrink-0 [--s:22%]"><div><img src={poster(s)} alt="" width={88} height={88} className="h-full w-full object-cover" /></div></div>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-4">
                 <h3 className="t4 min-w-0 font-bold [overflow-wrap:anywhere]">{s.label}</h3>
@@ -145,7 +158,7 @@ function Showcase() {
           <p className="t4 mt-6 lg:hidden">{s.title}.</p>
         </div>
         <div className="order-1 min-w-0 lg:order-2 lg:col-span-8">
-          <div className="slant aspect-[16/10] [--s:12%]"><div><Clip key={s.id} name={s.clip} className="animate-[fade_400ms_ease_both]" /></div></div>
+          <div className="slant aspect-[16/10] [--s:12%]"><div><div key={s.id} className="swap h-full"><div data-drift><Clip name={s.clip} /></div></div></div></div>
           <p className="t4 mt-4 hidden text-right lg:block">{s.title}.</p>
         </div>
       </div>
@@ -175,12 +188,12 @@ function Steps() {
           return (
             <li key={t} className={`flex transition-[flex-basis] duration-[450ms] ease-[var(--ease-in-out)] ${on ? 'lg:basis-[58%]' : 'lg:basis-[14%]'} ${['bg-step-1', 'bg-step-2', 'bg-step-3', 'bg-step-4'][k]} ${light ? 'text-ink' : 'text-white'} lg:min-w-0`}>
               {on ? (
-                <div className="flex w-full flex-col gap-6 p-6 md:p-10 lg:flex-row">
+                <div className="panel-in flex w-full flex-col gap-6 p-6 md:p-10 lg:flex-row">
                   <div className="flex flex-1 flex-col justify-between gap-6">
                     <h3 className="t3">{t}</h3>
                     <p className="t4 max-w-[36ch]">{d}</p>
                   </div>
-                  <div className="slant aspect-[4/3] w-full self-end [--s:18%] lg:w-[48%]"><div><img src={img} alt="" width={480} height={360} loading="lazy" className="h-full w-full object-cover" /></div></div>
+                  <div className="slant aspect-[4/3] w-full self-end [--s:18%] lg:w-[48%]"><div><div data-drift><img src={img} alt="" width={480} height={360} loading="lazy" className="h-full w-full object-cover" /></div></div></div>
                 </div>
               ) : (
                 <button onClick={() => setOpen(k)} aria-expanded={false} className="flex h-16 w-full items-center px-6 text-left font-bold transition-opacity hover:opacity-85 lg:h-full lg:items-end lg:p-6">
@@ -224,7 +237,7 @@ function Area() {
           </p>
         </div>
         <div className="lg:col-span-5 lg:col-start-8" data-in>
-          <div className="slant aspect-[16/9] [--s:12%]"><div><Clip name="rundgang" /></div></div>
+          <div className="slant aspect-[16/9] [--s:12%]"><div><div data-drift><Clip name="rundgang" /></div></div></div>
           <h3 className="t4 mt-8 font-bold">Entfernung ab Gärtringen</h3>
           <ul className="mt-4 grid grid-cols-2 gap-x-8 gap-y-2.5">
             {cities.map((c) => <li key={c.name} className="flex justify-between gap-3"><span>{c.name}</span><span className="tabular-nums text-white/75">{c.km} km</span></li>)}
@@ -241,9 +254,9 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
   return (
     <footer className="bg-tile px-4 pb-28 pt-20 md:px-8 md:pb-10 md:pt-28">
       <div className="mx-auto max-w-[1440px]">
-        <div className="flex h-[22svh] items-end gap-1 md:h-[34svh]" aria-label="SELLITA" role="img">
+        <div className="flex h-[22svh] items-end gap-1 md:h-[34svh]" aria-label="SELLITA" role="img" data-grow>
           {blocks.map(([ch, h, bg], k) => (
-            <div key={k} className={`${bg} relative flex flex-1 items-end justify-center overflow-hidden`} style={{ height: `${h}%` }}>
+            <div key={k} className={`${bg} relative flex flex-1 items-end justify-center overflow-hidden`} style={{ height: `${h}%`, transitionDelay: `${k * 70}ms` }}>
               <span aria-hidden className="translate-y-[12%] text-[clamp(56px,15vw,230px)] font-black leading-[0.8] text-tile [font-variation-settings:'wdth'_125]">{ch}</span>
             </div>
           ))}
