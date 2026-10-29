@@ -53,7 +53,7 @@ export default function App() {
       <header className="sticky top-0 z-40 bg-white">
         <div className="mx-auto flex h-[72px] max-w-[1440px] items-center justify-between px-4 md:px-8">
           <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="SELLITA, zum Seitenanfang"><Logo /></a>
-          <nav className="flex items-center gap-8">
+          <nav className="flex items-center gap-4 lg:gap-8">
             {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="link hidden font-medium md:inline">{label}</a>)}
             <a href={FIRMA.tel} className="cut !px-6 !py-3"><Phone size={16} /><span className="hidden lg:inline">{FIRMA.phone}</span><span className="lg:hidden">Anrufen</span></a>
           </nav>
