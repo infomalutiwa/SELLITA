@@ -23,7 +23,7 @@ export function Exterior() {
   const found = usePbr('concrete_floor_01', [4, 0.3], { metalness: 0 })
   const scenery = useRef<Group>(null)
   // Sträucher blenden aus, sobald der Röntgen-Blick läuft (sonst verdecken sie die Kamera)
-  useFrame(() => { if (scenery.current) scenery.current.visible = S.free ? !S.xrayForce : S.p < 0.07 || (S.p > 0.72 && S.p < 0.86) || S.p > 0.9 })
+  useFrame(() => { if (scenery.current) scenery.current.visible = S.free ? !S.xrayForce : true })
   const bushes = useMemo(() => {
     const r = (i: number) => { const x = Math.sin(i * 12.9898) * 43758.5453; return x - Math.floor(x) }
     const out: { id: string; p: [number, number, number]; s: number; r: number }[] = []

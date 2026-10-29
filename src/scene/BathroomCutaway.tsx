@@ -45,9 +45,9 @@ export function BathroomCutaway() {
   const tileList = useMemo(() => {
     const out: { p: [number, number, number]; s: [number, number]; r: 'wall' | 'floor' | 'side' }[] = []
     const x0 = 0.78, cw = 0.78
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.72 + 0.6 * (r + 0.5), TILE_Z], s: [cw - 0.015, 0.585], r: 'wall' })
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.76, -1.55 + 0.9 * (r + 0.5) - 0.35], s: [cw - 0.015, 0.885], r: 'floor' })
-    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [0.7, 2.72 + 0.6 * (r + 0.5), -1.55 + 1.1 * (c + 0.5)], s: [1.08, 0.585], r: 'side' })
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.72 + 0.6 * (r + 0.5), TILE_Z], s: [cw - 0.004, 0.596], r: 'wall' })
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [x0 + cw * (c + 0.5), 2.76, -1.55 + 0.9 * (r + 0.5) - 0.35], s: [cw - 0.004, 0.896], r: 'floor' })
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 3; c++) out.push({ p: [0.7, 2.72 + 0.6 * (r + 0.5), -1.55 + 1.1 * (c + 0.5)], s: [1.096, 0.596], r: 'side' })
     return out
   }, [])
 
@@ -148,7 +148,7 @@ export function BathroomCutaway() {
         ] as const).map((l, i) => (
           <mesh key={i} position={l.base as unknown as [number, number, number]} userData={{ base: l.base, n: l.n, h: l.h }} visible={false}>
             <boxGeometry args={l.size as unknown as [number, number, number]} />
-            <meshStandardMaterial color="#0ea5e9" emissive="#0ea5e9" emissiveIntensity={0.25} roughness={0.55} transparent opacity={0.92} />
+            <meshStandardMaterial color="#1683c4" roughness={0.6} />
           </mesh>
         ))}
       </group>

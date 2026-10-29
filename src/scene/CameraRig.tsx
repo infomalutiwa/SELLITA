@@ -20,9 +20,9 @@ export const KEYS: Key[] = [
   { p: 0.31, pos: [2.1, 1.9, 3.2], tgt: [1.8, 2.0, -1.1], sx: -0.9 },
   { p: 0.34, pos: [2.3, 2.0, 2.8], tgt: [1.6, 2.15, -1.2], sx: -0.6 },
   // Akt 2 · entlang der blauen Steigleitung hoch ins Bad, Schichten fahren auseinander
-  { p: 0.39, pos: [3.0, 2.7, 4.0], tgt: [0.6, 2.9, -1.7] },
-  { p: 0.45, pos: [3.6, 4.4, 4.9], tgt: [1.85, 3.6, -0.9], sx: 1.2 },
-  { p: 0.53, pos: [2.8, 4.0, 4.2], tgt: [1.85, 3.55, -1.0], sx: 1.0 },
+  { p: 0.39, pos: [2.4, 2.7, 4.0], tgt: [0.6, 2.9, -1.7] },
+  { p: 0.45, pos: [2.3, 4.3, 4.9], tgt: [1.9, 3.6, -0.9], sx: 0.8 },
+  { p: 0.53, pos: [2.0, 3.95, 4.3], tgt: [1.9, 3.55, -1.0], sx: 0.8 },
   // Akt 3 · im selben Stockwerk nach links in den Wohnraum (Möbel & Elektrik)
   { p: 0.59, pos: [0.4, 4.1, 4.8], tgt: [-1.4, 3.6, -0.9], sx: -1.3 },
   { p: 0.68, pos: [-0.8, 4.2, 4.3], tgt: [-1.5, 3.6, -1.1], sx: -1.2 },

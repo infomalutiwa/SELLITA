@@ -11,15 +11,15 @@ export function WallOpening() {
   const root = useRef<Group>(null)
   const beam = useRef<Mesh>(null)
   const mats = useMemo(() => ({
-    wood: new MeshStandardMaterial({ color: '#c79a63', roughness: 0.85, transparent: true }),
-    wool: new MeshStandardMaterial({ color: '#e9d98a', roughness: 1, transparent: true }),
-    board: new MeshStandardMaterial({ color: '#d8dde3', roughness: 0.9, transparent: true }),
+    wood: new MeshStandardMaterial({ color: '#b98c58', roughness: 0.8 }),
+    wool: new MeshStandardMaterial({ color: '#d9c374', roughness: 1 }),
+    board: new MeshStandardMaterial({ color: '#d8dde3', roughness: 0.9 }),
   }), [])
   const vis = () => bump(0.09, 0.15, 0.22, 0.27, S.p)
   useFrame(({ clock }) => {
     const v = vis()
-    if (root.current) root.current.visible = v > 0.01
-    mats.wood.opacity = v; mats.wool.opacity = 0.95 * v; mats.board.opacity = 0.9 * v
+    // Vorwand baut sich massiv vom Boden auf statt einzublenden
+    if (root.current) { root.current.visible = v > 0.01; root.current.scale.y = Math.max(0.001, v) }
     if (beam.current) {
       beam.current.position.x = -3.0 + ((clock.elapsedTime * 0.55) % 1) * 3.3
       ;(beam.current.material as MeshStandardMaterial).opacity = 0.35 * v

@@ -7,7 +7,7 @@ const wallGlow = () => 0.6 + 1.0 * bump(0.1, 0.17, 0.33, 0.4, S.p)
 const waterGlow = () => 0.6 + 1.0 * bump(0.34, 0.39, 0.48, 0.54, S.p) + 0.6 * bump(0.24, 0.29, 0.33, 0.37, S.p)
 
 const RED = '#d9a37a' // Warmwasser: Kupferrohr (Rot bleibt der Thermografie vorbehalten)
-const BLUE = '#2bb7ff' // Kaltwasser
+const BLUE = '#0ea5e9' // Kaltwasser
 
 export function PipeNetwork() {
   return (

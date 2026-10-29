@@ -1,7 +1,7 @@
 import { useMemo, useRef } from 'react'
 import { useFrame } from '@react-three/fiber'
 import { Billboard, Html } from '@react-three/drei'
-import { ShaderMaterial, Vector2, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial } from 'three'
+import { Plane, ShaderMaterial, Vector2, Vector3, type Group, type Mesh, type MeshBasicMaterial, type MeshStandardMaterial } from 'three'
 import { S, smooth } from '../state'
 import { LEAK } from './layout'
 
@@ -9,7 +9,7 @@ const vis = () => smooth(0.19, 0.23, S.p) * (1 - smooth(0.36, 0.4, S.p))
 
 // Wärmebild-Palette (Eisen): dunkel -> Blau -> Gelb -> Rot -> Weiß; Rot nur hier (Thermografie)
 const thermoFrag = /* glsl */ `
-uniform float uTime, uScan, uOpacity, uFound; uniform vec2 uLeak; uniform float uPipeY;
+uniform float uTime, uScan, uOpacity, uFound, uCut; uniform vec2 uLeak; uniform float uPipeY;
 varying vec2 vUv;
 float h(vec2 p){ return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
 float n(vec2 p){ vec2 i = floor(p), f = fract(p); f = f*f*(3.0-2.0*f);
@@ -22,12 +22,13 @@ vec3 iron(float t){
   return mix(c, vec3(1.0,0.95,0.9), smoothstep(0.9, 1.0, t));
 }
 void main(){
-  vec2 p = vUv * vec2(3.0, 1.9);
-  float t = 0.18 + 0.12 * n(p * 3.0 + uTime * 0.05) + 0.06 * n(p * 9.0);
+  if (vUv.x < uCut) discard;
+  vec2 p = vUv * vec2(3.0, 2.3);
+  float t = 0.08 + 0.12 * n(p * 3.0 + uTime * 0.05) + 0.06 * n(p * 9.0);
   float py = (p.y - uPipeY) / 0.07; t += 0.22 * exp(-py * py);            // Leitung zeichnet sich ab
   float d = length((p - uLeak) * vec2(1.0, 1.25));
   float pulse = 0.85 + 0.15 * sin(uTime * 4.0);
-  t += uFound * pulse * (0.5 * exp(-d * d / 0.05) + 0.22 * exp(-d * d / 0.4)); // feuchte Stelle
+  t += uFound * pulse * (0.45 * exp(-d * d / 0.05) + 0.25 * exp(-d * d / 0.4)); // feuchte Stelle
   vec3 col = iron(t);
   float edge = smoothstep(uScan - 0.01, uScan, vUv.x) * (1.0 - smoothstep(uScan, uScan + 0.015, vUv.x));
   col += vec3(0.6, 0.85, 1.0) * edge * 2.0;
@@ -38,21 +39,24 @@ void main(){
 }`
 const thermoVert = /* glsl */ `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`
 
-/** Leckortung: Wand wird per Thermografie gescannt, Putz wird transparent, Sonar-Ring prüft das Rohr, Schadstelle wird markiert. */
+/** Leckortung: Wand wird per Thermografie gescannt, dann per Schnittkante geöffnet; Sonar-Ring prüft das Rohr, Schadstelle wird markiert. */
 export function LeakScanner() {
   const root = useRef<Group>(null)
   const ring = useRef<Mesh>(null)
   const ringMat = useRef<MeshBasicMaterial>(null)
-  const plaster = useRef<MeshStandardMaterial>(null)
+  const wall = useRef<Group>(null)
+  const cutLine = useRef<Mesh>(null)
   const sonar = useRef<Group>(null)
   const cross = useRef<Group>(null)
   const dot = useRef<Mesh>(null)
   const label = useRef<HTMLDivElement>(null)
-  // Wandfläche 3.0 x 1.9 m, Mitte [1.8, 1.65]; Leck/Leitung in Flächen-Koordinaten
+  // Raumhohe Wand 3.0 x 2.3 m, Mitte [1.8, 1.35]; Leck/Leitung in Flächen-Koordinaten
   const thermo = useMemo(() => new ShaderMaterial({
     vertexShader: thermoVert, fragmentShader: thermoFrag, transparent: true, depthWrite: false, toneMapped: false,
-    uniforms: { uTime: { value: 0 }, uScan: { value: 0 }, uOpacity: { value: 0 }, uFound: { value: 0 }, uLeak: { value: new Vector2(LEAK[0] - 0.3, LEAK[1] - 0.7) }, uPipeY: { value: LEAK[1] - 0.7 } },
+    uniforms: { uTime: { value: 0 }, uScan: { value: 0 }, uOpacity: { value: 0 }, uFound: { value: 0 }, uCut: { value: 0 }, uLeak: { value: new Vector2(LEAK[0] - 0.3, LEAK[1] - 0.2) }, uPipeY: { value: LEAK[1] - 0.2 } },
   }), [])
+  // Schnittebene: Putz links von x = c wird weggeschnitten
+  const cut = useMemo(() => new Plane(new Vector3(1, 0, 0), -0.3), [])
 
   useFrame(({ clock }) => {
     const t = clock.elapsedTime
@@ -62,12 +66,18 @@ export function LeakScanner() {
     const scan = (Math.sin(t * 0.9) * 0.5 + 0.5)
     if (ring.current) ring.current.position.x = 0.55 + scan * 2.3
     if (ringMat.current) ringMat.current.opacity = v
-    if (plaster.current) plaster.current.opacity = 0.95 * smooth(0.19, 0.22, S.p) * (1 - smooth(0.3, 0.335, S.p))
+    // Wand steht massiv im Raum, bis sie nach dem Scan per Schnittkante geöffnet wird
+    const open = smooth(0.295, 0.335, S.p)
+    const cx = 0.3 + 3.0 * open
+    cut.constant = -cx
+    if (wall.current) wall.current.visible = S.free ? !S.xrayForce : S.p < 0.36
+    if (cutLine.current) { cutLine.current.visible = !S.free && open > 0.002 && open < 0.998; cutLine.current.position.x = cx }
+    thermo.uniforms.uCut.value = open
     // Thermografie: Scan-Linie fährt über den Putz, danach öffnet sich die Wand
     const found = smooth(0.27, 0.3, S.p)
     thermo.uniforms.uTime.value = t
     thermo.uniforms.uScan.value = smooth(0.225, 0.275, S.p) * 1.02
-    thermo.uniforms.uOpacity.value = smooth(0.22, 0.23, S.p) * (1 - smooth(0.305, 0.34, S.p))
+    thermo.uniforms.uOpacity.value = smooth(0.215, 0.225, S.p) * (S.free ? 0 : 1)
     thermo.uniforms.uFound.value = smooth(0.25, 0.28, S.p)
     // Pulsierende Schadstelle + Sonar-Wellen
     if (dot.current) dot.current.scale.setScalar((0.6 + 0.4 * Math.sin(t * 7)) * found + 0.001)
@@ -81,13 +91,20 @@ export function LeakScanner() {
   })
 
   return (
-    <group ref={root} visible={false}>
-      {/* Verputzte Wand vor dem Rohr */}
-      <mesh position={[1.8, 1.65, -0.95]}>
-        <boxGeometry args={[3.0, 1.9, 0.08]} />
-        <meshStandardMaterial ref={plaster} color="#ece8e1" roughness={1} transparent opacity={0.9} depthWrite={false} />
+    <>
+    {/* Verputzte, raumhohe Wand vor der Leitung (massiv, wird per Schnitt geöffnet) */}
+    <group ref={wall}>
+      <mesh position={[1.8, 1.35, -0.95]} castShadow receiveShadow>
+        <boxGeometry args={[3.0, 2.3, 0.08]} />
+        <meshStandardMaterial color="#e9e5df" roughness={0.95} clippingPlanes={[cut]} clipShadows />
       </mesh>
-      <mesh position={[1.8, 1.65, -0.905]} material={thermo} renderOrder={2}><planeGeometry args={[3.0, 1.9]} /></mesh>
+      <mesh position={[1.8, 1.35, -0.905]} material={thermo} renderOrder={2}><planeGeometry args={[3.0, 2.3]} /></mesh>
+      <mesh ref={cutLine} position={[0.3, 1.35, -0.93]} visible={false}>
+        <boxGeometry args={[0.025, 2.32, 0.14]} />
+        <meshBasicMaterial color={[0.25 * 5, 0.75 * 5, 1.4 * 5]} toneMapped={false} />
+      </mesh>
+    </group>
+    <group ref={root} visible={false}>
       {/* Scan-Ring um das Rohr (Achse = x) */}
       <mesh ref={ring} position={[1.8, LEAK[1], LEAK[2]]} rotation={[0, Math.PI / 2, 0]}>
         <torusGeometry args={[0.2, 0.012, 8, 56]} />
@@ -114,5 +131,6 @@ export function LeakScanner() {
         <div ref={label} className="lbl3d" style={{ opacity: 0, borderColor: '#ef4444' }}>● Leck geortet · ohne Aufstemmen</div>
       </Html>
     </group>
+    </>
   )
 }
