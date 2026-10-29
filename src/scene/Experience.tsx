@@ -9,6 +9,7 @@ import { useRef } from 'react'
 import { S, smooth } from '../state'
 import { HouseScene } from './HouseScene'
 import { CameraRig } from './CameraRig'
+import { ExportHook } from './ExportHook'
 import { ServiceRadiusMap, MAP_Y } from './ServiceRadiusMap'
 
 function LiteSky() {
@@ -17,13 +18,17 @@ function LiteSky() {
   return <group ref={ref}><Sky distance={4500} sunPosition={[-40, 6, 60]} turbidity={6} rayleigh={1.6} mieCoefficient={0.006} mieDirectionalG={0.9} /></group>
 }
 
-function Lights() {
+function Lights({ video }: { video: boolean }) {
   return (
     <>
       <ambientLight intensity={0.06} color="#b6c4d8" />
       <directionalLight position={[-9, 7, 10]} intensity={3.0} color="#ffc99a" castShadow shadow-mapSize={[2048, 2048]} shadow-camera-left={-9} shadow-camera-right={9} shadow-camera-top={9} shadow-camera-bottom={-9} shadow-camera-near={1} shadow-camera-far={40} shadow-bias={-0.0003} shadow-normalBias={0.03} />
       <directionalLight position={[10, 4, -6]} intensity={0.5} color="#7aa7ff" />
-      {import.meta.env.VITE_LITE ? (
+      {video ? (
+        <Environment resolution={128} environmentIntensity={0.9}>
+          <Lightformer form="rect" intensity={1.2} color="#b6c4d8" position={[0, 9, 0]} rotation-x={Math.PI / 2} scale={[14, 14, 1]} />
+        </Environment>
+      ) : import.meta.env.VITE_LITE ? (
         <>
           <LiteSky />
           <Environment resolution={256} environmentIntensity={0.9}>
@@ -39,7 +44,7 @@ function Lights() {
   )
 }
 
-function Stage() {
+function Stage({ video }: { video: boolean }) {
   const mapRef = useRef<Group>(null)
   const houseRef = useRef<Group>(null)
   useFrame(() => {
@@ -49,9 +54,10 @@ function Stage() {
   })
   return (
     <>
-      <group ref={houseRef}><HouseScene /></group>
+      {/* im Video-Modus kommt das Haus aus dem vorgerenderten Film, live bleibt nur die Karte */}
+      {!video && <group ref={houseRef}><HouseScene /></group>}
       <group ref={mapRef}><ServiceRadiusMap /></group>
-      <Sparkles count={S.mobile ? 20 : 50} scale={[7, 5, 5]} position={[0, 2.8, 0.5]} size={1.4} speed={0.15} opacity={0.22} color="#ffe6c4" />
+      {!video && <Sparkles count={S.mobile ? 20 : 50} scale={[7, 5, 5]} position={[0, 2.8, 0.5]} size={1.4} speed={0.15} opacity={0.22} color="#ffe6c4" />}
       <Sparkles count={S.mobile ? 20 : 60} scale={[12, 6, 12]} position={[0, MAP_Y + 3, 0]} size={2} speed={0.2} opacity={0.5} color="#bfe6ff" />
       <SceneFog />
     </>
@@ -69,12 +75,13 @@ function SceneFog() {
   return null
 }
 
-export function Experience() {
+export function Experience({ video = false, active = true }: { video?: boolean; active?: boolean }) {
   const [ready, setReady] = useState(false)
   useEffect(() => setReady(true), [])
   if (!ready) return null
   return (
     <Canvas
+      frameloop={active ? 'always' : 'never'}
       dpr={[1, 2]}
       shadows={{ type: PCFSoftShadowMap }}
       camera={{ position: [9.5, 4.8, 13.5], fov: 42, near: 0.1, far: 200 }}
@@ -83,9 +90,10 @@ export function Experience() {
       onCreated={({ gl }) => { gl.localClippingEnabled = true }}
     >
       <Suspense fallback={null}>
-        <Lights />
-        <Stage />
+        <Lights video={video} />
+        <Stage video={video} />
         <CameraRig />
+        {S.exp && <ExportHook />}
       </Suspense>
       <EffectComposer multisampling={S.mobile ? 0 : 4}>
         {!S.mobile && <N8AO aoRadius={0.7} distanceFalloff={1.2} intensity={2.2} quality="medium" color="#0b1018" />}

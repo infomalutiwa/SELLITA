@@ -63,7 +63,7 @@ export function CameraRig() {
   }, [])
 
   useFrame((_, dt) => {
-    S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
+    if (!S.exp) S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
     if (S.free) {
       if (!wasFree.current && controls.current) { controls.current.target.copy(look.current); controls.current.update() }
       wasFree.current = true
@@ -86,13 +86,14 @@ export function CameraRig() {
     const tt = performance.now() / 1000
     pos.x += Math.sin(tt * 0.7) * 0.035; pos.y += Math.sin(tt * 0.93 + 1.3) * 0.025; pos.z += Math.sin(tt * 0.51 + 0.4) * 0.03
     cur.copy(pos)
-    camera.position.lerp(cur, Math.min(1, dt * 12))
-    look.current.lerp(tgt, Math.min(1, dt * 12))
+    const k = S.exp ? 1 : Math.min(1, dt * 12)
+    camera.position.lerp(cur, k)
+    look.current.lerp(tgt, k)
     camera.lookAt(look.current)
     FOCUS.copy(look.current)
     const cam = camera as PerspectiveCamera
     const fov = 30 + 12 * smooth(0.04, 0.16, S.p) - 6 * smooth(0.85, 0.9, S.p)
-    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * Math.min(1, dt * 4); cam.updateProjectionMatrix() }
+    if (Math.abs(cam.fov - fov) > 0.01) { cam.fov += (fov - cam.fov) * (S.exp ? 1 : Math.min(1, dt * 4)); cam.updateProjectionMatrix() }
   })
 
   return <OrbitControls ref={controls as never} makeDefault enabled={S.free} enablePan={false} minDistance={3} maxDistance={40} enableDamping dampingFactor={0.08} />

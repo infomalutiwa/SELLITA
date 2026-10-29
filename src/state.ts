@@ -7,6 +7,8 @@ export const S = {
   free: false, // OrbitControls mode
   xrayForce: false,
   mouse: { x: 0, y: 0 },
+  // Offline-Export für das vorgerenderte Video (?export): deterministische Zeit, keine Kamera-Trägheit
+  exp: typeof location !== 'undefined' && location.search.includes('export'),
   mobile: typeof window !== 'undefined' && (window.innerWidth < 820 || /Mobi|Android/i.test(navigator.userAgent)),
 }
 

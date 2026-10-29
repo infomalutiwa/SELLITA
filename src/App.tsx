@@ -10,6 +10,7 @@ import { Experience } from './scene/Experience'
 import { Overlay } from './ui/Overlay'
 import { HudNav } from './ui/HudNav'
 import { Timeline } from './ui/Timeline'
+import { VideoScrub, loadVideoManifest, type VideoManifest } from './ui/VideoScrub'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
 import { S, sceneOf } from './state'
@@ -38,6 +39,11 @@ export default function App() {
   const [playing, setPlaying] = useState(false)
   const lenis = useRef<Lenis | null>(null)
   const autoRef = useRef<(() => void) | null>(null)
+  // vorgerenderter Film vorhanden? (undefined = wird geprüft)
+  const [video, setVideo] = useState<VideoManifest | null | undefined>(S.exp ? null : undefined)
+  const [vidProg, setVidProg] = useState(0)
+  useEffect(() => { if (video === undefined) loadVideoManifest().then(setVideo) }, [video])
+  const onVidProgress = useCallback((l: number, n: number) => setVidProg(Math.min(100, (l / n) * 100)), [])
 
   useEffect(() => {
     const l = new Lenis({ duration: 1.25, smoothWheel: true })
@@ -92,8 +98,9 @@ export default function App() {
 
   return (
     <>
-      <GLBoundary><Experience /></GLBoundary>
-      <Loader onDone={() => setTimeout(() => { if (window.scrollY < 10 && !matchMedia('(prefers-reduced-motion: reduce)').matches) autoRef.current?.() }, 2500)} />
+      {video !== undefined && <GLBoundary><Experience video={!!video} active={!video || scene >= 5 || free} /></GLBoundary>}
+      {video && <VideoScrub m={video} onProgress={onVidProgress} />}
+      <Loader video={video === undefined ? 'pending' : video ? vidProg : null} onDone={() => setTimeout(() => { if (!S.exp && window.scrollY < 10 && !matchMedia('(prefers-reduced-motion: reduce)').matches) autoRef.current?.() }, 2500)} />
       {!free && <Letterbox />}
       <div id="scroll" style={{ height: '800vh' }} aria-hidden />
 
@@ -103,14 +110,14 @@ export default function App() {
           {free && (
             <button onClick={() => setXray(!xray)} className={`glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${xray ? 'text-sky-300' : ''}`}><ScanEye size={14} /> Röntgen</button>
           )}
-          <button onClick={() => setFree(!free)} className="glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold" aria-pressed={free}>
+          {!video && <button onClick={() => setFree(!free)} className="glass flex items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold" aria-pressed={free}>
             {free ? <X size={14} /> : <Orbit size={14} />}<span className="hidden sm:inline">{free ? 'Zurück zur Tour' : 'Haus frei drehen'}</span>
-          </button>
+          </button>}
           <a href={FIRMA.tel} className="flex items-center gap-2 rounded-full bg-[#0ea5e9] px-3 py-2 text-xs font-bold shadow-lg shadow-sky-900/40"><Phone size={14} /><span className="hidden sm:inline">{FIRMA.phone}</span></a>
         </div>
       </header>
 
-      {!free && <Overlay scene={scene} ren={ren} onRen={setRen} />}
+      {!free && <Overlay scene={scene} ren={ren} onRen={video ? undefined : setRen} />}
       {!free && <HudNav active={scene} onJump={jump} />}
 
       {/* progress bar */}
@@ -145,8 +152,11 @@ function Letterbox() {
   return (<><div className={bar + ' top-0'} style={{ height: h }} /><div className={bar + ' bottom-0'} style={{ height: h }} /></>)
 }
 
-function Loader({ onDone }: { onDone: () => void }) {
-  const { progress, active } = useProgress()
+function Loader({ onDone, video }: { onDone: () => void; video: number | 'pending' | null }) {
+  const gl = useProgress()
+  // Film-Modus: Fortschritt der Bildsequenz; sonst: 3D-Assets
+  const progress = video === 'pending' ? 0 : video === null ? gl.progress : video
+  const active = video === 'pending' ? true : video === null ? gl.active : video < 100
   const [done, setDone] = useState(false)
   useEffect(() => { if (!active && progress >= 100) { const t = setTimeout(() => { setDone(true); onDone() }, 500); return () => clearTimeout(t) } }, [active, progress])
   return (

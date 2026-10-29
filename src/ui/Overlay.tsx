@@ -32,7 +32,7 @@ function Card({ k, side = 'left', children }: { k: string; side?: 'left' | 'righ
   )
 }
 
-export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; onRen: (v: boolean) => void }) {
+export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; onRen?: (v: boolean) => void }) {
   return (
     <div className="pointer-events-none fixed inset-0 z-20">
       <AnimatePresence mode="wait">
@@ -81,10 +81,10 @@ export function Overlay({ scene, ren, onRen }: { scene: number; ren: boolean; on
               <Badge tone="white" icon={<PaintRoller size={12} />}>Wohnungsrenovierung</Badge>
               <Badge tone="blue" icon={<Zap size={12} />}>Elektrik in der Wand</Badge>
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1 text-sm font-bold" role="group" aria-label="Vorher / Nachher">
+            {onRen && <div className="mt-4 grid grid-cols-2 gap-1 rounded-xl bg-black/30 p-1 text-sm font-bold" role="group" aria-label="Vorher / Nachher">
               <button onClick={() => onRen(false)} className={`rounded-lg px-3 py-2 transition ${!ren ? 'bg-white/20' : 'text-white/60'}`}>Vorher · Altbau</button>
               <button onClick={() => onRen(true)} className={`rounded-lg px-3 py-2 transition ${ren ? 'bg-[#0ea5e9]' : 'text-white/60'}`}>Nachher · SELLITA</button>
-            </div>
+            </div>}
           </Card>
         )}
         {scene === 4 && (

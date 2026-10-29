@@ -234,6 +234,7 @@ function Balcony() {
   const layers = useRef<Group>(null)
   const top = useRef<Group>(null)
   const lamps = useRef<Group>(null)
+  const facade = useRef<Group>(null)
   const concrete = usePbr('concrete_floor_01', [1.4, 0.6])
   const stone = usePbr('large_floor_tiles_02', [0.5, 0.5], { metalness: 0 })
   const cOld = useMemo(() => new Color('#6b5a4a'), [])
@@ -249,6 +250,8 @@ function Balcony() {
     layers.current?.children.forEach((c, i) => { c.position.y = (c.userData.y as number) + X * i * 0.26 })
     tileMat.color.copy(cOld).lerp(cNew, S.ren)
     if (top.current) top.current.position.y = 0.155 + X * 4 * 0.26
+    // Leuchten + Leitung sitzen in der Fassade: verschwinden mit dem Architektur-Schnitt
+    if (facade.current) facade.current.visible = cutOpen() < 0.02
     const on = smooth(0.78, 0.84, S.p) * (1 - smooth(0.9, 0.93, S.p)) * (0.25 + 0.75 * S.ren)
     lamps.current?.children.forEach((c) => {
       const mat = (c as import('three').Mesh).material as MeshStandardMaterial
@@ -279,6 +282,7 @@ function Balcony() {
         <mesh position={[-1.65, 0.45, 0]}><boxGeometry args={[0.02, 0.9, 1.4]} /><meshPhysicalMaterial color="#cfe9f7" transparent opacity={0.16} roughness={0.04} /></mesh>
       </group>
       {/* Elektrik/Montage: Außenleuchten neben der Balkontür + Außensteckdose, Leitung in der Fassade */}
+      <group ref={facade}>
       <group ref={lamps}>
         {[-1.15, 0.55].map((x) => (
           <mesh key={x} position={[x, 1.75, wallZ]}><boxGeometry args={[0.1, 0.22, 0.07]} /><meshStandardMaterial color="#fff6dc" emissive="#ffe6b0" emissiveIntensity={0.2} toneMapped={false} /></mesh>
@@ -287,6 +291,7 @@ function Balcony() {
       </group>
       <FlowPipe points={[[-1.15, 1.75, wallZ - 0.1], [-1.15, 2.3, wallZ - 0.1], [0.55, 2.3, wallZ - 0.1], [0.55, 1.75, wallZ - 0.1]]} color="#ffffff" radius={0.014} speed={0.9} glow={() => 0.3 + bump(0.74, 0.78, 0.84, 0.88, S.p)} />
       <FlowPipe points={[[0.55, 2.3, wallZ - 0.11], [0.95, 2.3, wallZ - 0.11], [0.95, 0.55, wallZ - 0.11]]} color="#f8fafc" radius={0.012} speed={0.9} glow={() => 0.3 + bump(0.74, 0.78, 0.84, 0.88, S.p)} />
+      </group>
     </group>
   )
 }
@@ -326,7 +331,7 @@ function Electrics() {
   })
   return (
     <group>
-      <FlowPipe points={[[-3.1, 2.8, -1.9], [-3.1, 5.0, -1.9], [-1.8, 5.05, -1.5], [-0.2, 5.05, -1.0], [-0.2, 5.05, 1.2]]} color="#ffffff" radius={0.022} speed={0.9} glow={on} />
+      <FlowPipe points={[[-3.1, 2.8, -1.9], [-3.1, 5.1, -1.9], [-1.8, 5.13, -1.5], [-0.2, 5.13, -1.0], [-0.2, 5.13, 1.2]]} color="#ffffff" radius={0.022} speed={0.9} glow={on} />
       <FlowPipe points={[[-3.1, 2.8, -1.8], [-3.1, 3.2, -1.0], [-3.1, 3.2, 1.2]]} color="#f8fafc" radius={0.02} speed={0.9} glow={on} />
       <FlowPipe points={[[-0.45, 2.8, -1.9], [-0.45, 3.4, -1.9], [-1.4, 3.4, -1.9]]} color="#ffffff" radius={0.02} speed={0.9} glow={on} />
       <group ref={spots}>
