@@ -1,10 +1,9 @@
 {
  "count": 773,
  "fps": 12,
- "w": 1280,
- "h": 720,
  "ext": "webp",
  "path": "video/frames",
+ "pathMobile": "video/frames_m",
  "marks": {
   "intro": [
    0.0,

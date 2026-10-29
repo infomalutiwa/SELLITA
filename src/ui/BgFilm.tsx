@@ -1,18 +1,26 @@
 import { useEffect, useRef } from 'react'
 
-type Manifest = { count: number; fps: number; ext: string; path: string; marks: Record<string, [number, number]> }
-type Key = { y: number; t: number; dim: number; x: number; z: number; fit: number; ay: number }
+type Manifest = { count: number; fps: number; ext: string; path: string; pathMobile?: string; marks: Record<string, [number, number]> }
+type Key = { y: number; t: number; dim: number; x: number; z: number; fit: number; ay: number; mo: number }
 type View = Omit<Key, 'y'>
 
-const frameUrl = (m: Manifest, i: number) => `${m.path}/f_${String(i).padStart(4, '0')}.${m.ext}`
+const MOBILE = '(max-width: 767px)'
+const WINDOW = 8 // so viele Bilder vor/hinter der aktuellen Stelle bleiben dekodiert
+const DECODERS = 3
 
 /**
  * Hintergrundfilm als Bildsequenz, gesteuert über die Scroll-Position.
  * Jeder Abschnitt mit `data-film="<mark>"` spielt seinen Teil des Films ab, während er durch die
- * Bildschirmmitte läuft (`data-a`/`data-b` = Anteil des Marks, `data-dim` = Abdunklung 0..1,
- * `data-x`/`data-z` = Verschiebung nach rechts bzw. Zoom am Desktop, `data-fit`/`data-ay` = ganzes Bild statt Ausschnitt im Hochformat).
+ * Mitte des Inhaltsbereichs läuft (`data-a`/`data-b` = Anteil des Marks, `data-dim` = Abdunklung am Desktop,
+ * `data-x`/`data-z` = Verschiebung bzw. Zoom am Desktop, `data-fit`/`data-ay` = ganzes Bild statt Ausschnitt
+ * und dessen Höhe am Handy, `data-mo` = Handy-Filmfenster nach oben wegschieben 0..1).
+ *
+ * Flüssig bleibt es, weil Bilder nie beim Zeichnen dekodiert werden: Sie liegen als komprimierte Blobs im
+ * Speicher, und nur ein kleines Fenster um die aktuelle Stelle wird im Hintergrund zu ImageBitmaps dekodiert.
+ * Am Handy läuft der Film in einem eigenen Fenster oben, der Text steht darunter (siehe --win in index.css).
  */
 export function BgFilm() {
+  const box = useRef<HTMLDivElement>(null)
   const canvas = useRef<HTMLCanvasElement>(null)
   const shade = useRef<HTMLDivElement>(null)
 
@@ -25,61 +33,93 @@ export function BgFilm() {
       .catch(() => {})
 
     function start(m: Manifest) {
-      const imgs: (HTMLImageElement | null)[] = new Array(m.count).fill(null)
-      let dirty = true, next = 0
-      // erst grob (jedes 16. Bild), dann immer feiner nachladen; am Handy bzw. im Datensparmodus nur jedes 2. Bild
-      const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
-      const finest = conn?.saveData || innerWidth < 768 ? 2 : 1
+      const mobile = matchMedia(MOBILE).matches
+      const path = mobile && m.pathMobile ? m.pathMobile : m.path
+      const blobs: (Blob | null)[] = new Array(m.count).fill(null)
+      const bitmaps = new Map<number, ImageBitmap>()
+      const decoding = new Set<number>()
+      let dirty = true
+
+      // Laden: erst grob (jedes 16. Bild), dann immer feiner
       const order: number[] = [], seen = new Set<number>()
-      for (const step of [16, 8, 4, 2, 1].filter((s) => s >= finest)) for (let i = 0; i < m.count; i += step) if (!seen.has(i)) { seen.add(i); order.push(i) }
+      for (const step of [16, 8, 4, 2, 1]) for (let i = 0; i < m.count; i += step) if (!seen.has(i)) { seen.add(i); order.push(i) }
+      let next = 0
       const pump = () => {
         if (cancelled || next >= order.length) return
         const i = order[next++]
-        const im = new Image()
-        im.decoding = 'async'
-        im.onload = () => { imgs[i] = im; dirty = true; pump() }
-        im.onerror = pump
-        im.src = frameUrl(m, i)
+        fetch(`${path}/f_${String(i).padStart(4, '0')}.${m.ext}`)
+          .then((r) => (r.ok ? r.blob() : null))
+          .then((b) => { if (b) { blobs[i] = b; dirty = true } })
+          .catch(() => {})
+          .finally(pump)
       }
       for (let k = 0; k < 6; k++) pump()
-      // nächstes geladenes Bild an/vor bzw. nach Position i
-      const prevLoaded = (i: number) => { for (let j = i; j >= 0; j--) if (imgs[j]) return j; return -1 }
-      const nextLoaded = (i: number) => { for (let j = i; j < m.count; j++) if (imgs[j]) return j; return -1 }
+
+      // Dekodieren: nur rund um die aktuelle Stelle, nächstgelegene zuerst
+      const decode = (i: number) => {
+        decoding.add(i)
+        createImageBitmap(blobs[i]!)
+          .then((bm) => { if (cancelled) bm.close(); else { bitmaps.get(i)?.close(); bitmaps.set(i, bm); dirty = true } })
+          .catch(() => {})
+          .finally(() => decoding.delete(i))
+      }
+      const schedule = (f: number) => {
+        const c = Math.round(f)
+        for (const [i, bm] of bitmaps) if (Math.abs(i - c) > WINDOW + 4) { bm.close(); bitmaps.delete(i) }
+        for (let d = 0; d <= WINDOW && decoding.size < DECODERS; d++) {
+          for (const i of d ? [c + d, c - d] : [c]) {
+            if (i >= 0 && i < m.count && blobs[i] && !bitmaps.has(i) && !decoding.has(i) && decoding.size < DECODERS) decode(i)
+          }
+        }
+      }
+      const prevReady = (i: number) => { for (let j = i; j >= 0; j--) if (bitmaps.has(j)) return j; return -1 }
+      const nextReady = (i: number) => { for (let j = i; j < m.count; j++) if (bitmaps.has(j)) return j; return -1 }
 
       // Scroll-Position -> Filmzeit
-      let keys: Key[] = []
+      let keys: Key[] = [], anchor = innerHeight / 2
       const measure = () => {
         const vh = innerHeight, out: Key[] = []
+        const winBottom = mobile ? box.current!.getBoundingClientRect().height + 64 : 0
+        anchor = (winBottom + vh) / 2
         document.querySelectorAll<HTMLElement>('[data-film]').forEach((el) => {
           const mk = m.marks[el.dataset.film!]
           if (!mk) return
           const top = el.getBoundingClientRect().top + scrollY
           const d = el.dataset, a = Number(d.a ?? 0), b = Number(d.b ?? 1)
-          const v = { dim: Number(d.dim ?? 0.5), x: Number(d.x ?? 0), z: Number(d.z ?? 1), fit: Number(d.fit ?? 0), ay: Number(d.ay ?? 0.5) }
+          const v = { dim: Number(d.dim ?? 0.5), x: Number(d.x ?? 0), z: Number(d.z ?? 1), fit: Number(d.fit ?? 0), ay: Number(d.ay ?? 0.5), mo: Number(d.mo ?? 0) }
           const t = (f: number) => mk[0] + (mk[1] - mk[0]) * f
-          out.push({ y: Math.max(0, top - vh * 0.5), t: t(a), ...v }, { y: Math.max(0, top + el.offsetHeight - vh * 0.5), t: t(b), ...v })
+          out.push({ y: Math.max(0, top - anchor), t: t(a), ...v }, { y: Math.max(0, top + el.offsetHeight - anchor), t: t(b), ...v })
         })
         keys = out.sort((p, q) => p.y - q.y)
         dirty = true
       }
+      const FIELDS = ['t', 'dim', 'x', 'z', 'fit', 'ay', 'mo'] as const
       const at = (y: number): View => {
-        if (!keys.length) return { t: 0, dim: 0.5, x: 0, z: 1, fit: 0, ay: 0.5 }
+        if (!keys.length) return { t: 0, dim: 0.5, x: 0, z: 1, fit: 0, ay: 0.5, mo: 0 }
         if (y <= keys[0].y) return keys[0]
         for (let i = 1; i < keys.length; i++) {
           const k0 = keys[i - 1], k1 = keys[i]
           if (y <= k1.y) {
             const f = k1.y > k0.y ? (y - k0.y) / (k1.y - k0.y) : 1
-            const l = (p: keyof View) => k0[p] + (k1[p] - k0[p]) * f
-            return { t: l('t'), dim: l('dim'), x: l('x'), z: l('z'), fit: l('fit'), ay: l('ay') }
+            const o = {} as View
+            for (const p of FIELDS) o[p] = k0[p] + (k1[p] - k0[p]) * f
+            return o
           }
         }
         return keys[keys.length - 1]
       }
 
-      const c = canvas.current!, ctx = c.getContext('2d')!
+      // Canvas nur so groß wie nötig; die ein-/ausfahrende Browserleiste am Handy legt ihn nicht neu an
+      const c = canvas.current!, ctx = c.getContext('2d', { alpha: false })!
+      let cssW = 0, cssH = 0
       const resize = () => {
-        const dpr = Math.min(1.5, devicePixelRatio || 1)
-        c.width = Math.round(innerWidth * dpr); c.height = Math.round(innerHeight * dpr)
+        const r = box.current!.getBoundingClientRect()
+        if (Math.abs(r.width - cssW) < 1 && Math.abs(r.height - cssH) < 120) { measure(); return }
+        cssW = r.width; cssH = r.height
+        const scale = Math.min(mobile ? 2 : 1.25, devicePixelRatio || 1, (mobile ? 960 : 1600) / cssW)
+        c.width = Math.round(cssW * scale); c.height = Math.round(cssH * scale)
+        ctx.fillStyle = '#000'; ctx.fillRect(0, 0, c.width, c.height)
+        dirty = true
         measure()
       }
       resize()
@@ -87,51 +127,62 @@ export function BgFilm() {
       const ro = new ResizeObserver(measure)
       ro.observe(document.body)
 
-      let v = at(scrollY), lastF = -1, prev = performance.now()
-      const draw = (im: HTMLImageElement, alpha: number) => {
-        const iw = im.naturalWidth, ih = im.naturalHeight
+      let v = at(scrollY), lastF = -1, lastGeo = '', prev = performance.now(), shown = false, lastDim = -1, lastMo = -1
+      const draw = (bm: ImageBitmap, alpha: number) => {
+        const iw = bm.width, ih = bm.height
         const cover = Math.max(c.width / iw, c.height / ih), contain = Math.min(c.width / iw, c.height / ih)
-        const portrait = c.width < c.height
-        const desk = innerWidth >= 1024
-        const s = portrait ? cover + (contain - cover) * v.fit : cover * (desk ? v.z : 1)
+        const desk = !mobile && innerWidth >= 1024
+        const s = mobile ? cover + (contain - cover) * v.fit : cover * (desk ? v.z : 1)
         const w = iw * s, h = ih * s
-        const dx = desk ? v.x * c.width : 0
         ctx.globalAlpha = alpha
-        ctx.drawImage(im, (c.width - w) / 2 + dx, (c.height - h) * (portrait ? v.ay : 0.5), w, h)
+        ctx.drawImage(bm, (c.width - w) / 2 + (desk ? v.x * c.width : 0), (c.height - h) * (mobile ? v.ay : 0.5), w, h)
       }
       const loop = (now: number) => {
         raf = requestAnimationFrame(loop)
         const dt = Math.min(0.1, (now - prev) / 1000); prev = now
-        const k = at(scrollY), e = Math.min(1, dt * 7)
-        const moved = Math.abs(k.x - v.x) + Math.abs(k.z - v.z) + Math.abs(k.fit - v.fit) + Math.abs(k.ay - v.ay) > 1e-4
-        v = { t: v.t + (k.t - v.t) * e, dim: k.dim, x: v.x + (k.x - v.x) * e, z: v.z + (k.z - v.z) * e, fit: v.fit + (k.fit - v.fit) * e, ay: v.ay + (k.ay - v.ay) * e }
-        if (shade.current) shade.current.style.opacity = k.dim.toFixed(3)
+        const k = at(scrollY), e = Math.min(1, dt * 8)
+        const o = {} as View
+        for (const p of FIELDS) o[p] = v[p] + (k[p] - v[p]) * e
+        v = o
+        if (shade.current && Math.abs(v.dim - lastDim) > 0.002) { shade.current.style.opacity = v.dim.toFixed(3); lastDim = v.dim }
+        if (mobile && Math.abs(v.mo - lastMo) > 0.001) {
+          box.current!.style.transform = v.mo > 0.001 ? `translate3d(0, ${(-v.mo * (cssH + 64)).toFixed(1)}px, 0)` : ''
+          lastMo = v.mo
+        }
+        if (mobile && v.mo > 0.999) return // Fenster ist weggeschoben
         const f = Math.min(m.count - 1, Math.max(0, v.t * m.fps))
-        if (!dirty && !moved && Math.abs(f - lastF) < 0.01) return
-        lastF = f; dirty = false
-        // zwischen den zwei nächsten geladenen Bildern überblenden (auch solange noch nicht alle da sind)
-        let ia = prevLoaded(Math.floor(f)), ib = nextLoaded(Math.floor(f) + 1)
+        schedule(f)
+        const geo = `${v.x.toFixed(4)}|${v.z.toFixed(4)}|${v.fit.toFixed(4)}|${v.ay.toFixed(4)}`
+        if (!dirty && geo === lastGeo && Math.abs(f - lastF) < 0.01) return
+        // zwischen den zwei nächsten dekodierten Bildern überblenden
+        let ia = prevReady(Math.floor(f)), ib = nextReady(Math.floor(f) + 1)
         if (ia < 0) { ia = ib; ib = -1 }
         if (ia < 0) return
+        lastF = f; lastGeo = geo; dirty = false
         const a = ib > ia ? (f - ia) / (ib - ia) : 0
-        ctx.clearRect(0, 0, c.width, c.height)
-        draw(imgs[ia]!, 1)
-        if (ib > ia && a > 0.02) draw(imgs[ib]!, a)
         ctx.globalAlpha = 1
-        c.style.opacity = '1'
+        ctx.fillStyle = '#000'
+        ctx.fillRect(0, 0, c.width, c.height)
+        draw(bitmaps.get(ia)!, 1)
+        if (ib > ia && a > 0.02) draw(bitmaps.get(ib)!, a)
+        ctx.globalAlpha = 1
+        if (!shown) { c.style.opacity = '1'; shown = true }
       }
       raf = requestAnimationFrame(loop)
-      return () => { ro.disconnect(); removeEventListener('resize', resize) }
+      return () => {
+        ro.disconnect(); removeEventListener('resize', resize)
+        for (const bm of bitmaps.values()) bm.close()
+        bitmaps.clear()
+      }
     }
     return () => { cancelled = true; cancelAnimationFrame(raf); cleanup() }
   }, [])
 
   return (
-    <div aria-hidden className="pointer-events-none fixed inset-0 z-0 bg-black">
+    <div ref={box} aria-hidden className="film-box pointer-events-none fixed inset-x-0 z-20 overflow-hidden bg-black md:inset-0 md:z-0">
       <canvas ref={canvas} className="h-full w-full opacity-0 transition-opacity duration-700" />
-      <div ref={shade} className="absolute inset-0 bg-[#07090e]" style={{ opacity: 0.5 }} />
+      <div ref={shade} className="absolute inset-0 hidden bg-[#07090e] md:block" style={{ opacity: 0.5 }} />
       <div className="film-shade absolute inset-0" />
-      <div className="grain absolute" style={{ inset: '-5%' }} />
     </div>
   )
 }

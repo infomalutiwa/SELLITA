@@ -42,7 +42,7 @@ export default function App() {
     <>
       <BgFilm />
 
-      <header className={`fixed inset-x-0 top-0 z-40 transition-colors duration-300 ${scrolled || menu ? 'border-b border-white/10 bg-[#07090e]/85 backdrop-blur-md' : ''}`}>
+      <header className={`fixed inset-x-0 top-0 z-40 bg-[#07090e] transition-colors duration-300 ${scrolled || menu ? 'md:border-b md:border-white/10 md:bg-[#07090e]' : 'md:bg-transparent'}`}>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
           <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="Zum Seitenanfang"><Logo /></a>
           <nav className="hidden items-center gap-7 text-[15px] text-white/75 lg:flex">
@@ -63,12 +63,12 @@ export default function App() {
 
       <main id="top" className="relative z-10">
         {/* Einstieg */}
-        <section data-film="intro" data-dim="0.12" data-x="0.25" data-z="0.78" data-fit="0.8" data-ay="0.14" className="flex min-h-[100svh] items-end pb-24 md:pb-20">
+        <section data-film="intro" data-dim="0.12" data-x="0.25" data-z="0.78" data-fit="0.12" data-ay="0.5" className="pb-16 pt-[calc(4rem+var(--win)+1.5rem)] md:flex md:min-h-[100svh] md:items-end md:pb-20 md:pt-0">
           <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
             <div className="reveal max-w-3xl">
               <p className="mb-4 flex items-center gap-2 text-sm text-white/70"><MapPin size={15} className="text-sky-300" /> Gärtringen · Landkreis Böblingen</p>
-              <h1 className="text-[2.4rem] font-semibold leading-[1.05] tracking-tight md:text-6xl">Sanitär, Leckortung und Sanierung aus einer Hand.</h1>
-              <p className="mt-5 max-w-2xl text-lg text-white/75 md:text-xl">Wir finden Lecks, sanieren Bäder und Balkone, renovieren Wohnungen und übernehmen Montagen – in Gärtringen und bis zu 100 km drumherum.</p>
+              <h1 className="text-[2.1rem] font-semibold leading-[1.08] tracking-tight md:text-6xl">Sanitär, Leckortung und Sanierung aus einer Hand.</h1>
+              <p className="mt-4 max-w-2xl text-[17px] text-white/75 md:mt-5 md:text-xl">Wir finden Lecks, sanieren Bäder und Balkone, renovieren Wohnungen und übernehmen Montagen – in Gärtringen und bis zu 100 km drumherum.</p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <button onClick={() => go('kontakt')} className={`${btn} bg-white text-[#07090e] hover:bg-white/90`}>Anfrage stellen <ArrowRight size={17} /></button>
                 <a href={FIRMA.tel} className={`${btn} border border-white/25 hover:border-white/50`}><Phone size={17} /> {FIRMA.phone}</a>
@@ -81,7 +81,7 @@ export default function App() {
         </section>
 
         {/* Leistungen */}
-        <div id="leistungen" className="mx-auto max-w-7xl px-4 pt-16 md:px-8">
+        <div id="leistungen" className="mx-auto max-w-7xl px-4 pt-6 md:px-8 md:pt-16">
           <div className="reveal max-w-2xl">
             <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Leistungen</p>
             <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Sieben Leistungen, ein Ansprechpartner.</h2>
@@ -90,7 +90,7 @@ export default function App() {
         {SERVICES.map((s, i) => <ServiceSection key={s.id} s={s} i={i} onAsk={ask} />)}
 
         {/* Ablauf */}
-        <section id="ablauf" data-film="alles" data-dim="0.6" className="py-28 md:py-40">
+        <section id="ablauf" data-film="alles" data-dim="0.6" className="py-16 md:py-40">
           <div className="mx-auto max-w-7xl px-4 md:px-8">
             <div className="reveal max-w-2xl">
               <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Ablauf</p>
@@ -103,7 +103,7 @@ export default function App() {
                 ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet.'],
                 ['Ausführung', 'Wir arbeiten sauber und übergeben die Baustelle aufgeräumt.'],
               ].map(([t, d], i) => (
-                <li key={t} className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/80 p-6 backdrop-blur" style={{ transitionDelay: `${i * 80}ms` }}>
+                <li key={t} className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/92 p-6" style={{ transitionDelay: `${i * 80}ms` }}>
                   <span className="text-sm tabular-nums text-sky-300">0{i + 1}</span>
                   <h3 className="mt-3 text-xl font-semibold">{t}</h3>
                   <p className="mt-2 text-[15px] leading-relaxed text-white/65">{d}</p>
@@ -116,7 +116,7 @@ export default function App() {
         <Area />
 
         {/* Kontakt */}
-        <section id="kontakt" data-film="outro" data-a="0.5" data-b="1" data-dim="0.72" className="pb-28 pt-20 md:pb-32 md:pt-28">
+        <section id="kontakt" data-film="outro" data-a="0.5" data-b="1" data-dim="0.72" data-mo="1" className="pb-28 pt-16 md:pb-32 md:pt-28">
           <div className="mx-auto grid max-w-7xl gap-8 px-4 md:px-8 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
             <div className="reveal">
               <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Kontakt</p>
@@ -145,7 +145,7 @@ export default function App() {
       </footer>
 
       {/* Schnellkontakt am Handy */}
-      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/10 bg-[#07090e]/95 text-[13px] font-medium backdrop-blur transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/10 bg-[#07090e] text-[13px] font-medium transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <a href={FIRMA.tel} className="flex flex-col items-center gap-1 py-2.5"><Phone size={19} className="text-sky-300" />Anrufen</a>
         <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 py-2.5"><MessageCircle size={19} className="text-[#25d366]" />WhatsApp</a>
         <button onClick={() => go('kontakt')} className="flex flex-col items-center gap-1 py-2.5"><ArrowRight size={19} />Anfrage</button>
@@ -160,21 +160,21 @@ function ServiceSection({ s, i, onAsk }: { s: (typeof SERVICES)[number]; i: numb
   const Icon = ICONS[s.icon as keyof typeof ICONS]
   const right = i % 2 === 1
   return (
-    <section id={s.id} data-film={s.film} data-dim="0.36" className="min-h-[165vh]">
-      <div className="sticky top-[max(5rem,18vh)] mx-auto max-w-7xl px-4 py-10 md:px-8">
-        <article className={`reveal max-w-[34rem] rounded-xl border border-white/10 bg-[#0b0e13]/82 p-6 backdrop-blur-md md:p-8 ${right ? 'md:ml-auto' : ''}`}>
+    <section id={s.id} data-film={s.film} data-dim="0.3" className="min-h-[135svh] md:min-h-[165vh]">
+      <div className="sticky top-[calc(4rem+var(--win))] mx-auto max-w-7xl px-4 py-6 md:top-[max(5rem,18vh)] md:px-8 md:py-10">
+        <article className={`reveal max-w-[34rem] md:rounded-xl md:border md:border-white/10 md:bg-[#0b0e13]/92 md:p-8 ${right ? 'md:ml-auto' : ''}`}>
           <div className="flex items-center justify-between">
             <span className={`flex items-center gap-2 text-sm font-medium ${s.id === 'leck' ? 'text-red-400' : 'text-sky-300'}`}><Icon size={17} /> {s.label}</span>
             <span className="text-sm tabular-nums text-white/40">{String(i + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}</span>
           </div>
-          <h3 className="mt-4 text-[1.75rem] font-semibold leading-tight tracking-tight md:text-[2.25rem]">{s.title}</h3>
-          <p className="mt-3 text-[16px] leading-relaxed text-white/70">{s.text}</p>
-          <ul className="mt-5 space-y-2">
+          <h3 className="mt-3 text-[1.6rem] font-semibold leading-tight tracking-tight md:mt-4 md:text-[2.25rem]">{s.title}</h3>
+          <p className="mt-3 text-[15px] leading-relaxed text-white/70 md:text-[16px]">{s.text}</p>
+          <ul className="mt-4 space-y-1.5 md:mt-5 md:space-y-2">
             {s.points.map((p) => <li key={p} className="flex items-start gap-2.5 text-[15px]"><Check size={17} className="mt-0.5 shrink-0 text-sky-300" />{p}</li>)}
           </ul>
           <div className="mt-6 flex flex-wrap gap-2">
             <button onClick={() => onAsk(s.id)} className={`${btn} bg-white !py-2.5 text-[#07090e] hover:bg-white/90`}>Dazu anfragen <ArrowRight size={16} /></button>
-            <a href={FIRMA.tel} className={`${btn} border border-white/20 !py-2.5 hover:border-white/45`}><Phone size={16} /> Anrufen</a>
+            <a href={FIRMA.tel} className={`${btn} border border-white/20 !py-2.5 hover:border-white/45 max-md:hidden`}><Phone size={16} /> Anrufen</a>
           </div>
         </article>
       </div>
@@ -189,7 +189,7 @@ function Area() {
     .map(([name, pos]) => ({ name: name.replace(/(^|-)\p{L}/gu, (c) => c.toUpperCase()), km: Math.round(distKm([HOME.lat, HOME.lon], pos)) }))
     .filter((c) => c.km > 2 && c.km <= 100).sort((a, b) => a.km - b.km), [])
   return (
-    <section id="einsatzgebiet" data-film="outro" data-a="0" data-b="0.5" data-dim="0.55" className="py-28 md:py-36">
+    <section id="einsatzgebiet" data-film="outro" data-a="0" data-b="0.5" data-dim="0.55" data-mo="1" className="py-16 md:py-36">
       <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-2 lg:items-start">
         <div className="reveal">
           <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Einsatzgebiet</p>
@@ -200,7 +200,7 @@ function Area() {
             <div className="relative">
               <MapPin size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-300" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="PLZ oder Ort, z. B. 72070 Tübingen"
-                className="w-full rounded-lg border border-white/15 bg-[#0b0e13]/85 py-3.5 pl-11 pr-4 text-[15px] outline-none backdrop-blur placeholder:text-white/35 focus:border-sky-400" />
+                className="w-full rounded-lg border border-white/15 bg-[#0b0e13] py-3.5 pl-11 pr-4 text-[15px] outline-none placeholder:text-white/35 focus:border-sky-400" />
             </div>
           </label>
           <p className="mt-3 min-h-6 text-[15px]" aria-live="polite">
@@ -211,7 +211,7 @@ function Area() {
               : <span className="text-white/50">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
           </p>
         </div>
-        <div className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/82 p-6 backdrop-blur md:p-8">
+        <div className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/92 p-6 md:p-8">
           <h3 className="text-sm font-medium uppercase tracking-[0.14em] text-white/55">Entfernung ab Gärtringen</h3>
           <ul className="mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
             {cities.map((c) => (

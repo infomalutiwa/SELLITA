@@ -12,7 +12,7 @@ export function DirectContact() {
     { href: MAPS, icon: <MapPin size={18} />, label: 'Adresse', value: `${FIRMA.street}, ${FIRMA.city}`, ext: true },
   ]
   return (
-    <ul className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-[#0b0e13]/85 backdrop-blur">
+    <ul className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-[#0b0e13]/92">
       {rows.map((r) => (
         <li key={r.label}>
           <a href={r.href} {...(r.ext ? { target: '_blank', rel: 'noreferrer' } : {})} className="flex items-center gap-4 px-5 py-4 transition hover:bg-white/5">
@@ -59,7 +59,7 @@ export function RequestForm({ preselect }: { preselect: { id: string; n: number 
   }
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="rounded-xl border border-white/10 bg-[#0b0e13]/90 p-5 backdrop-blur md:p-7" data-lenis-prevent>
+    <form onSubmit={(e) => e.preventDefault()} className="rounded-xl border border-white/10 bg-[#0b0e13]/95 p-5 md:p-7" data-lenis-prevent>
       <fieldset>
         <legend className="mb-3 text-sm font-medium text-white/70">Worum geht es?</legend>
         <div className="flex flex-wrap gap-2">
