@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Check, Copy, Mail, MapPin, MessageCircle, Phone } from 'lucide-react'
 import { FIRMA, MAPS, SERVICES, checkArea } from '../data'
 
-const inp = 'w-full rounded-lg border border-white/15 bg-black/30 px-3.5 py-3 text-[15px] outline-none transition placeholder:text-white/35 focus:border-sky-400 focus:bg-black/40'
+const inp = 'w-full rounded-xl border border-line bg-white px-4 py-3 text-[16px] outline-none transition placeholder:text-ink-soft/60 focus:border-water'
 
 export function DirectContact() {
   const rows = [
@@ -12,13 +12,13 @@ export function DirectContact() {
     { href: MAPS, icon: <MapPin size={18} />, label: 'Adresse', value: `${FIRMA.street}, ${FIRMA.city}`, ext: true },
   ]
   return (
-    <ul className="divide-y divide-white/10 overflow-hidden rounded-xl border border-white/10 bg-[#0b0e13]/92">
+    <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-white">
       {rows.map((r) => (
         <li key={r.label}>
-          <a href={r.href} {...(r.ext ? { target: '_blank', rel: 'noreferrer' } : {})} className="flex items-center gap-4 px-5 py-4 transition hover:bg-white/5">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/8 text-sky-300">{r.icon}</span>
+          <a href={r.href} {...(r.ext ? { target: '_blank', rel: 'noreferrer' } : {})} className="flex items-center gap-4 px-5 py-4 transition hover:bg-tile/60">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-tile text-water">{r.icon}</span>
             <span className="min-w-0">
-              <span className="block text-xs uppercase tracking-[0.14em] text-white/50">{r.label}</span>
+              <span className="block text-[13px] text-ink-soft">{r.label}</span>
               <span className="block truncate text-[15px] font-medium">{r.value}</span>
             </span>
           </a>
@@ -59,16 +59,16 @@ export function RequestForm({ preselect }: { preselect: { id: string; n: number 
   }
 
   return (
-    <form onSubmit={(e) => e.preventDefault()} className="rounded-xl border border-white/10 bg-[#0b0e13]/95 p-5 md:p-7" data-lenis-prevent>
+    <form onSubmit={(e) => e.preventDefault()} className="rounded-3xl border border-line bg-white p-5 md:p-8" data-lenis-prevent>
       <fieldset>
-        <legend className="mb-3 text-sm font-medium text-white/70">Worum geht es?</legend>
+        <legend className="mb-3 text-[15px] font-semibold">Worum geht es?</legend>
         <div className="flex flex-wrap gap-2">
           {SERVICES.map((s) => {
             const on = sel.includes(s.id)
             return (
               <button type="button" key={s.id} aria-pressed={on} onClick={() => setSel(on ? sel.filter((x) => x !== s.id) : [...sel, s.id])}
-                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition ${on ? 'border-sky-400 bg-sky-400/15 text-white' : 'border-white/15 text-white/75 hover:border-white/30'}`}>
-                {on && <Check size={14} className="text-sky-300" />}{s.label}
+                className={`flex items-center gap-1.5 rounded-full border px-3.5 py-2 text-sm transition ${on ? 'border-ink bg-ink text-white' : 'border-line text-ink-soft hover:border-ink/40'}`}>
+                {on && <Check size={14} />}{s.label}
               </button>
             )
           })}
@@ -88,7 +88,7 @@ export function RequestForm({ preselect }: { preselect: { id: string; n: number 
         <label className="sm:col-span-2"><span className="sr-only">PLZ oder Ort</span>
           <input className={inp} placeholder="PLZ oder Ort des Objekts" autoComplete="postal-code" value={f.ort} onChange={(e) => setF({ ...f, ort: e.target.value })} />
           {f.ort.trim().length > 2 && area.known && (
-            <span className={`mt-1.5 block text-[13px] ${area.inside ? 'text-emerald-300' : 'text-amber-300'}`}>
+            <span className={`mt-1.5 block text-[13px] ${area.inside ? 'text-emerald-700' : 'text-amber-700'}`}>
               {area.inside ? `Liegt in unserem Einsatzgebiet${area.km ? ` (ca. ${area.km} km)` : ''}.` : `Etwa ${area.km} km entfernt – rufen Sie kurz an, dann klären wir das.`}
             </span>
           )}
@@ -98,19 +98,19 @@ export function RequestForm({ preselect }: { preselect: { id: string; n: number 
         </label>
       </div>
 
-      {tried && missing && <p className="mt-3 text-sm text-amber-300" role="alert">{missing}</p>}
+      {tried && missing && <p className="mt-3 text-sm font-medium text-amber-700" role="alert">{missing}</p>}
 
       <div className="mt-5 grid gap-2 sm:grid-cols-2">
-        <a href={wa} target="_blank" rel="noreferrer" onClick={guard} className="flex items-center justify-center gap-2 rounded-lg bg-[#25d366] px-4 py-3.5 text-[15px] font-semibold text-[#0b1a10] transition hover:brightness-110">
+        <a href={wa} target="_blank" rel="noreferrer" onClick={guard} className="flex items-center justify-center gap-2 rounded-full bg-[#25d366] px-4 py-3.5 text-[15px] font-semibold text-[#0b1a10] transition hover:brightness-95">
           <MessageCircle size={18} /> Per WhatsApp senden
         </a>
-        <a href={mailto} onClick={guard} className="flex items-center justify-center gap-2 rounded-lg bg-sky-500 px-4 py-3.5 text-[15px] font-semibold text-white transition hover:bg-sky-400">
+        <a href={mailto} onClick={guard} className="flex items-center justify-center gap-2 rounded-full bg-water px-4 py-3.5 text-[15px] font-semibold text-white transition hover:bg-water-deep">
           <Mail size={18} /> Per E-Mail senden
         </a>
       </div>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[13px] text-white/50">
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-[13px] text-ink-soft">
         <span>Fotos vom Schaden am besten direkt per WhatsApp mitschicken.</span>
-        <button type="button" onClick={() => (missing ? setTried(true) : copy())} className="flex items-center gap-1.5 text-white/60 underline-offset-4 hover:text-white hover:underline">
+        <button type="button" onClick={() => (missing ? setTried(true) : copy())} className="flex items-center gap-1.5 text-ink-soft underline-offset-4 hover:text-ink hover:underline">
           {copied ? <Check size={14} /> : <Copy size={14} />}{copied ? 'Kopiert' : 'Text kopieren'}
         </button>
       </div>

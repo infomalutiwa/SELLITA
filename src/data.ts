@@ -1,6 +1,6 @@
 export const FIRMA = {
   name: 'SELLITA',
-  sub: 'Sanitär • Leckortung • Sanierung',
+  sub: 'Heizung & Sanitär',
   street: 'Rohrweg 20',
   city: '71116 Gärtringen',
   phone: '0178 30 14 260',
@@ -14,7 +14,7 @@ export const MAPS = 'https://www.google.com/maps/search/?api=1&query=' + encodeU
 
 export type Service = {
   id: string
-  film: string // Abschnitt im Hintergrundfilm (video/manifest.json -> marks)
+  clip: string // Video-Schleife in public/clips
   label: string
   title: string
   text: string
@@ -24,46 +24,52 @@ export type Service = {
 
 export const SERVICES: Service[] = [
   {
-    id: 'leck', film: 'leck', label: 'Leckortung', icon: 'ScanSearch',
-    title: 'Lecks finden, ohne die Wand aufzustemmen',
-    text: 'Feuchte Wand, steigender Wasserzähler, Fleck an der Decke? Mit Wärmebildkamera und Feuchtemessung grenzen wir die Stelle ein, bevor irgendwo gestemmt wird.',
-    points: ['Wärmebild (Thermografie)', 'Feuchtemessung im Mauerwerk', 'Gezielte Öffnung statt großer Baustelle'],
+    id: 'heizung', clip: '', label: 'Heizung', icon: 'Flame',
+    title: 'Heizung planen, einbauen, warten',
+    text: 'Neue Heizkörper, Tausch der alten Anlage oder die jährliche Wartung: Wir planen mit Ihnen, montieren sauber und halten die Heizung danach in Schuss.',
+    points: ['Planung und Beratung', 'Montage von Heizung und Heizkörpern', 'Wartung und Reparatur'],
   },
   {
-    id: 'bad', film: 'bad', label: 'Badsanierung', icon: 'Bath',
-    title: 'Vom alten Bad zum neuen – komplett',
-    text: 'Wir bauen das alte Bad zurück, verlegen neue Leitungen, dichten ab und fliesen. Am Ende steht ein fertiges Bad, und Sie hatten nur einen Ansprechpartner.',
-    points: ['Rückbau und Entsorgung', 'Neue Wasser- und Abwasserleitungen', 'Abdichtung und Fliesen', 'Bodengleiche Dusche, Wand-WC'],
-  },
-  {
-    id: 'sanitaer', film: 'sanitaer', label: 'Sanitär', icon: 'Droplets',
+    id: 'sanitaer', clip: 'sanitaer', label: 'Sanitär', icon: 'Droplets',
     title: 'Sanitär, das einfach funktioniert',
     text: 'Armatur tropft, Dusche soll getauscht werden oder es braucht neue Leitungen: Wir installieren sauber und dicht.',
     points: ['Armaturen und Duschsysteme', 'Waschtisch, WC, Eckventile', 'Kupfer- und Verbundrohr'],
   },
   {
-    id: 'elektrik', film: 'elektrik', label: 'Elektrik & Montage', icon: 'Zap',
-    title: 'Steckdosen, Schalter, Leuchten',
-    text: 'Bei Renovierungen setzen wir Steckdosen und Schalter, montieren Decken- und Wandleuchten und schließen sie an.',
-    points: ['Steckdosen und Schalter', 'Decken- und Wandleuchten', 'Montage im Zuge der Renovierung'],
+    id: 'leck', clip: 'leck', label: 'Leckortung', icon: 'ScanSearch',
+    title: 'Lecks finden, ohne die Wand aufzustemmen',
+    text: 'Feuchte Wand, steigender Wasserzähler, Fleck an der Decke? Mit Wärmebildkamera und Feuchtemessung grenzen wir die Stelle ein, bevor irgendwo gestemmt wird.',
+    points: ['Wärmebild (Thermografie)', 'Feuchtemessung im Mauerwerk', 'Gezielte Öffnung statt großer Baustelle'],
   },
   {
-    id: 'moebel', film: 'moebel', label: 'Möbelmontage', icon: 'Hammer',
-    title: 'Möbel ab- und wieder aufbauen',
-    text: 'Umzug, neue Einrichtung oder Platz für die Renovierung: Wir demontieren, montieren und richten Schränke und Regale passgenau aus.',
-    points: ['Demontage', 'Montage nach Anleitung', 'Ausrichten und Befestigen'],
+    id: 'bad', clip: 'bad', label: 'Badsanierung', icon: 'Bath',
+    title: 'Vom alten Bad zum neuen – komplett',
+    text: 'Wir bauen das alte Bad zurück, verlegen neue Leitungen, dichten ab und fliesen. Am Ende steht ein fertiges Bad, und Sie hatten nur einen Ansprechpartner.',
+    points: ['Rückbau und Entsorgung', 'Neue Wasser- und Abwasserleitungen', 'Abdichtung und Fliesen', 'Bodengleiche Dusche, Wand-WC'],
   },
   {
-    id: 'balkon', film: 'balkon', label: 'Balkonsanierung', icon: 'Fence',
+    id: 'balkon', clip: 'balkon', label: 'Balkonsanierung', icon: 'Fence',
     title: 'Den Balkon wieder dicht bekommen',
     text: 'Risse, lose Fliesen, Wasser im Belag: Wir nehmen den alten Belag ab und bauen neu auf, mit Abdichtung, Drainage und neuen Fliesen.',
     points: ['Alten Belag entfernen', 'Abdichtung und Drainage', 'Neuer Belag'],
   },
   {
-    id: 'wohnung', film: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller',
+    id: 'wohnung', clip: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller',
     title: 'Renoviert und bezugsfertig',
     text: 'Vor dem Einzug oder nach dem Auszug: alte Tapeten runter, Wände glätten und streichen, neuer Boden, neue Sockelleisten.',
     points: ['Wände glätten und streichen', 'Bodenbeläge', 'Sockelleisten und Details'],
+  },
+  {
+    id: 'elektrik', clip: 'elektrik', label: 'Elektrik & Montage', icon: 'Zap',
+    title: 'Steckdosen, Schalter, Leuchten',
+    text: 'Bei Renovierungen setzen wir Steckdosen und Schalter, montieren Decken- und Wandleuchten und schließen sie an.',
+    points: ['Steckdosen und Schalter', 'Decken- und Wandleuchten', 'Montage im Zuge der Renovierung'],
+  },
+  {
+    id: 'moebel', clip: 'moebel', label: 'Möbelmontage', icon: 'Hammer',
+    title: 'Möbel ab- und wieder aufbauen',
+    text: 'Umzug, neue Einrichtung oder Platz für die Renovierung: Wir demontieren, montieren und richten Schränke und Regale passgenau aus.',
+    points: ['Demontage', 'Montage nach Anleitung', 'Ausrichten und Befestigen'],
   },
 ]
 

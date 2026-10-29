@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Hintergrund-Film für die Webseite: dieselben Clips wie build_film.py, aber ohne Texte und ohne Karte,
-als Bildsequenzen für den scroll-gesteuerten Player: public/video/frames (Desktop), public/video/frames_m (Handy)
+als Bildsequenzen für den scroll-gesteuerten Player: public/video/frames (Desktop), public/video/frames_m (Handy) – wird von der aktuellen Seite nicht mehr genutzt
 und public/video/manifest.json.
 
 Aufruf: python3 video-src/build_web.py

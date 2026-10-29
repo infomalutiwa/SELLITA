@@ -1,15 +1,21 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Lenis from 'lenis'
-import { ArrowRight, Bath, Check, Droplets, Fence, Hammer, MapPin, Menu, MessageCircle, PaintRoller, Phone, ScanSearch, X, Zap } from 'lucide-react'
-import { BgFilm } from './ui/BgFilm'
+import { gsap } from 'gsap'
+import { ScrollTrigger } from 'gsap/ScrollTrigger'
+import { ArrowRight, Check, Flame, MapPin, Menu, MessageCircle, Phone, X } from 'lucide-react'
+import { Clip } from './ui/Clip'
 import { DirectContact, RequestForm } from './ui/Contact'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
 import { Logo } from './ui/Logo'
+import { heroScroll } from './ui/heroScroll'
 import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm } from './data'
 
-const ICONS = { ScanSearch, Bath, Droplets, Zap, Hammer, Fence, PaintRoller }
+gsap.registerPlugin(ScrollTrigger)
+const Tools3D = lazy(() => import('./ui/Tools3D'))
+
 const NAV = [['leistungen', 'Leistungen'], ['ablauf', 'Ablauf'], ['einsatzgebiet', 'Einsatzgebiet'], ['kontakt', 'Kontakt']] as const
-const btn = 'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-3 text-[15px] font-semibold transition'
+const btn = 'inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-[15px] font-semibold transition'
+const h2 = 'display text-[2.2rem] md:text-[3.6rem]'
 
 export default function App() {
   const lenis = useRef<Lenis | null>(null)
@@ -22,13 +28,24 @@ export default function App() {
     const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches
     const l = new Lenis({ duration: 1.1, smoothWheel: !reduce })
     lenis.current = l
-    let raf = requestAnimationFrame(function tick(t) { l.raf(t); raf = requestAnimationFrame(tick) })
+    // Lenis und ScrollTrigger auf demselben Takt
+    l.on('scroll', ScrollTrigger.update)
+    const tick = (t: number) => l.raf(t * 1000)
+    gsap.ticker.add(tick)
+    gsap.ticker.lagSmoothing(0)
     const onScroll = () => setScrolled(scrollY > 40)
     addEventListener('scroll', onScroll, { passive: true })
-    // Inhalte weich einblenden, sobald sie ins Bild kommen
-    const io = new IntersectionObserver((es) => es.forEach((e) => e.isIntersecting && e.target.classList.add('in')), { threshold: 0.15 })
-    document.querySelectorAll('.reveal').forEach((el) => io.observe(el))
-    return () => { cancelAnimationFrame(raf); l.destroy(); io.disconnect(); removeEventListener('scroll', onScroll) }
+
+    const ctx = gsap.context(() => {
+      // Werkzeuge fliegen beim Herunterscrollen auseinander
+      ScrollTrigger.create({ trigger: '#hero', start: 'top top', end: 'bottom top', onUpdate: (s) => { heroScroll.p = s.progress } })
+      // Video-Band: leichte Parallaxe
+      gsap.fromTo('#band-media', { yPercent: -10 }, { yPercent: 10, ease: 'none', scrollTrigger: { trigger: '#band', start: 'top bottom', end: 'bottom top', scrub: true } })
+      // Ablauf: Linie füllt sich, Schritte werden aktiv
+      gsap.fromTo('#steps-line', { scaleY: 0 }, { scaleY: 1, ease: 'none', scrollTrigger: { trigger: '#steps', start: 'top 70%', end: 'bottom 55%', scrub: true } })
+      gsap.utils.toArray<HTMLElement>('#steps li').forEach((li) => ScrollTrigger.create({ trigger: li, start: 'top 62%', toggleClass: 'on' }))
+    })
+    return () => { ctx.revert(); gsap.ticker.remove(tick); l.destroy(); removeEventListener('scroll', onScroll) }
   }, [])
 
   const go = useCallback((id: string) => {
@@ -40,73 +57,88 @@ export default function App() {
 
   return (
     <>
-      <BgFilm />
-
-      <header className={`fixed inset-x-0 top-0 z-40 bg-[#07090e] transition-colors duration-300 ${scrolled || menu ? 'md:border-b md:border-white/10 md:bg-[#07090e]' : 'md:bg-transparent'}`}>
+      <header className={`fixed inset-x-0 top-0 z-40 transition-shadow duration-300 bg-white ${scrolled || menu ? 'shadow-[0_1px_0_var(--color-line)]' : ''}`}>
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-8">
           <a href="#top" onClick={(e) => { e.preventDefault(); lenis.current?.scrollTo(0) }} aria-label="Zum Seitenanfang"><Logo /></a>
-          <nav className="hidden items-center gap-7 text-[15px] text-white/75 lg:flex">
-            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="transition hover:text-white">{label}</a>)}
+          <nav className="hidden items-center gap-8 text-[15px] text-ink-soft lg:flex">
+            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="transition hover:text-ink">{label}</a>)}
           </nav>
           <div className="flex items-center gap-2">
-            <a href={FIRMA.wa} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="hidden h-10 w-10 items-center justify-center rounded-lg border border-white/15 text-white/85 transition hover:border-white/35 sm:flex"><MessageCircle size={18} /></a>
-            <a href={FIRMA.tel} className={`${btn} bg-sky-500 !px-4 !py-2.5 text-white hover:bg-sky-400`}><Phone size={16} /><span className="hidden sm:inline">{FIRMA.phone}</span><span className="sm:hidden">Anrufen</span></a>
-            <button onClick={() => setMenu(!menu)} aria-label="Menü" aria-expanded={menu} className="flex h-10 w-10 items-center justify-center rounded-lg border border-white/15 lg:hidden">{menu ? <X size={18} /> : <Menu size={18} />}</button>
+            <a href={FIRMA.wa} target="_blank" rel="noreferrer" aria-label="WhatsApp" className="hidden h-10 w-10 items-center justify-center rounded-full border border-line bg-white transition hover:border-ink/30 sm:flex"><MessageCircle size={18} /></a>
+            <a href={FIRMA.tel} className={`${btn} bg-ink !px-4 !py-2.5 text-white hover:bg-water-deep`}><Phone size={16} /><span className="hidden sm:inline">{FIRMA.phone}</span><span className="sm:hidden">Anrufen</span></a>
+            <button onClick={() => setMenu(!menu)} aria-label="Menü" aria-expanded={menu} className="flex h-10 w-10 items-center justify-center rounded-full border border-line bg-white lg:hidden">{menu ? <X size={18} /> : <Menu size={18} />}</button>
           </div>
         </div>
         {menu && (
-          <nav className="border-t border-white/10 px-4 pb-4 lg:hidden">
-            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="block border-b border-white/5 py-3.5 text-lg">{label}</a>)}
+          <nav className="border-t border-line bg-white px-4 pb-4 lg:hidden">
+            {NAV.map(([id, label]) => <a key={id} href={`#${id}`} onClick={(e) => { e.preventDefault(); go(id) }} className="block border-b border-line py-3.5 text-lg">{label}</a>)}
           </nav>
         )}
       </header>
 
-      <main id="top" className="relative z-10">
-        {/* Einstieg */}
-        <section data-film="intro" data-dim="0.12" data-x="0.25" data-z="0.78" data-fit="0.12" data-ay="0.5" className="pb-16 pt-[calc(4rem+var(--win)+1.5rem)] md:flex md:min-h-[100svh] md:items-end md:pb-20 md:pt-0">
-          <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
-            <div className="reveal max-w-3xl">
-              <p className="mb-4 flex items-center gap-2 text-sm text-white/70"><MapPin size={15} className="text-sky-300" /> Gärtringen · Landkreis Böblingen</p>
-              <h1 className="text-[2.1rem] font-semibold leading-[1.08] tracking-tight md:text-6xl">Sanitär, Leckortung und Sanierung aus einer Hand.</h1>
-              <p className="mt-4 max-w-2xl text-[17px] text-white/75 md:mt-5 md:text-xl">Wir finden Lecks, sanieren Bäder und Balkone, renovieren Wohnungen und übernehmen Montagen – in Gärtringen und bis zu 100 km drumherum.</p>
-              <div className="mt-8 flex flex-wrap gap-3">
-                <button onClick={() => go('kontakt')} className={`${btn} bg-white text-[#07090e] hover:bg-white/90`}>Anfrage stellen <ArrowRight size={17} /></button>
-                <a href={FIRMA.tel} className={`${btn} border border-white/25 hover:border-white/50`}><Phone size={17} /> {FIRMA.phone}</a>
+      <main id="top">
+        {/* Einstieg: Werkzeug in 3D */}
+        <section id="hero" className="tiles relative overflow-hidden">
+          <div className="mx-auto flex max-w-7xl flex-col px-4 md:px-8 lg:min-h-[100svh] lg:flex-row lg:items-center">
+            <div className="relative z-10 order-2 pb-14 lg:order-1 lg:w-[46%] lg:py-28">
+              <p className="fade-late mb-5 flex items-center gap-2 text-[15px] text-ink-soft"><MapPin size={16} className="text-water" /> Handwerksbetrieb in Gärtringen, Kreis Böblingen</p>
+              <h1 className="rise display text-[3rem] sm:text-[4rem] lg:text-[4.7rem] xl:text-[5.2rem]">
+                <span><span>Warmes Wasser.</span></span>
+                <span><span>Dichte Leitungen.</span></span>
+              </h1>
+              <p className="fade-late mt-6 max-w-[34rem] text-[17px] leading-relaxed text-ink-soft md:text-[19px]">
+                Heizung und Sanitär aus Gärtringen: Wir planen und warten Heizungen, installieren Bäder, finden Lecks und renovieren. Im Umkreis von 100 km.
+              </p>
+              <div className="fade-late mt-8 flex flex-wrap gap-3">
+                <a href={FIRMA.tel} className={`${btn} bg-water text-white hover:bg-water-deep`}><Phone size={17} /> {FIRMA.phone}</a>
+                <a href={FIRMA.wa} target="_blank" rel="noreferrer" className={`${btn} border border-ink/15 bg-white hover:border-ink/35`}><MessageCircle size={17} /> Fotos per WhatsApp</a>
               </div>
+              <p className="fade-late mt-8 flex max-w-[34rem] items-start gap-3 rounded-2xl border border-signal/25 bg-white px-4 py-3 text-[15px] leading-snug">
+                <span className="mt-1.5 h-2 w-2 shrink-0 animate-pulse rounded-full bg-signal" />
+                <span><b>Wasser läuft gerade?</b> Hauptwasserhahn zudrehen, Strom im betroffenen Raum aus, dann anrufen.</span>
+              </p>
             </div>
-            <ul className="reveal mt-12 hidden flex-wrap gap-x-6 gap-y-2 text-sm text-white/60 md:flex">
-              {SERVICES.map((s) => <li key={s.id}><a href={`#${s.id}`} onClick={(e) => { e.preventDefault(); go(s.id) }} className="transition hover:text-white">{s.label}</a></li>)}
-            </ul>
+            <div className="relative order-1 -mx-4 h-[46svh] min-h-[300px] md:mx-0 lg:absolute lg:inset-y-0 lg:right-0 lg:order-2 lg:h-auto lg:w-[58vw]">
+              <div className="card-slant absolute inset-0" /><div className="card-line absolute inset-0" />
+              <Suspense fallback={null}><Tools3D className="absolute inset-0" /></Suspense>
+            </div>
           </div>
         </section>
 
-        {/* Leistungen */}
-        <div id="leistungen" className="mx-auto max-w-7xl px-4 pt-6 md:px-8 md:pt-16">
-          <div className="reveal max-w-2xl">
-            <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Leistungen</p>
-            <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Sieben Leistungen, ein Ansprechpartner.</h2>
+        <Services onAsk={ask} />
+
+        {/* Video-Band */}
+        <section id="band" className="relative h-[78svh] min-h-[460px] overflow-hidden bg-ink text-white">
+          <div id="band-media" className="absolute inset-x-0 -inset-y-[12%]"><Clip name="rundgang" /></div>
+          <div className="absolute inset-0 bg-[linear-gradient(0deg,rgba(37,40,46,.88),rgba(37,40,46,.2)_70%)] md:bg-[linear-gradient(90deg,rgba(37,40,46,.85),rgba(37,40,46,.35)_60%,transparent)]" />
+          <div className="relative mx-auto flex h-full max-w-7xl items-end px-4 pb-14 md:items-center md:px-8 md:pb-0">
+            <div className="max-w-xl">
+              <h2 className={h2}>Ein Ansprechpartner für das ganze Projekt.</h2>
+              <p className="mt-5 text-[17px] leading-relaxed text-white/80 md:text-[19px]">Ob nur eine Armatur oder die ganze Wohnung: Sie sprechen mit einer Person, die den Auftrag kennt, vom ersten Anruf bis zur Übergabe.</p>
+            </div>
           </div>
-        </div>
-        {SERVICES.map((s, i) => <ServiceSection key={s.id} s={s} i={i} onAsk={ask} />)}
+        </section>
 
         {/* Ablauf */}
-        <section id="ablauf" data-film="alles" data-dim="0.6" className="py-16 md:py-40">
-          <div className="mx-auto max-w-7xl px-4 md:px-8">
-            <div className="reveal max-w-2xl">
-              <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Ablauf</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">So läuft es bei uns.</h2>
+        <section id="ablauf" className="py-20 md:py-32">
+          <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-8 lg:grid-cols-[1fr_1.2fr]">
+            <div className="lg:sticky lg:top-32 lg:self-start">
+              <h2 className={h2}>So läuft ein Auftrag.</h2>
+              <p className="mt-5 max-w-md text-[17px] leading-relaxed text-ink-soft">Keine Überraschungen: Sie wissen vor dem ersten Handgriff, was gemacht wird und was es kostet.</p>
             </div>
-            <ol className="mt-12 grid gap-4 md:grid-cols-4">
+            <ol id="steps" className="relative pl-12 md:pl-16">
+              <span className="absolute bottom-3 left-[15px] top-3 w-px bg-line md:left-[19px]" />
+              <span id="steps-line" className="absolute bottom-3 left-[15px] top-3 w-px origin-top bg-water md:left-[19px]" />
               {[
-                ['Kurz melden', 'Anruf, WhatsApp oder E-Mail – gern mit ein paar Fotos vom Schaden oder vom Raum.'],
-                ['Termin vor Ort', 'Wir schauen uns alles an und besprechen mit Ihnen, was wirklich nötig ist.'],
-                ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet.'],
-                ['Ausführung', 'Wir arbeiten sauber und übergeben die Baustelle aufgeräumt.'],
+                ['Kurz melden', 'Anruf, WhatsApp oder E-Mail. Am besten mit ein paar Fotos vom Schaden oder vom Raum.'],
+                ['Termin vor Ort', 'Wir schauen uns alles an, messen nach und besprechen mit Ihnen, was wirklich nötig ist.'],
+                ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet. Erst wenn Sie zusagen, geht es los.'],
+                ['Ausführung und Übergabe', 'Wir arbeiten sauber, halten Sie auf dem Laufenden und übergeben aufgeräumt.'],
               ].map(([t, d], i) => (
-                <li key={t} className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/92 p-6" style={{ transitionDelay: `${i * 80}ms` }}>
-                  <span className="text-sm tabular-nums text-sky-300">0{i + 1}</span>
-                  <h3 className="mt-3 text-xl font-semibold">{t}</h3>
-                  <p className="mt-2 text-[15px] leading-relaxed text-white/65">{d}</p>
+                <li key={t} className="group relative pb-14 last:pb-0">
+                  <span className="absolute -left-12 top-0 flex h-8 w-8 items-center justify-center rounded-full border border-line bg-white text-sm font-semibold tabular-nums text-ink-soft transition-colors duration-500 group-[.on]:border-water group-[.on]:bg-water group-[.on]:text-white md:-left-16 md:h-10 md:w-10">{i + 1}</span>
+                  <h3 className="wide text-[1.5rem] font-bold leading-tight md:text-[1.9rem]">{t}</h3>
+                  <p className="mt-2 max-w-md text-[16px] leading-relaxed text-ink-soft">{d}</p>
                 </li>
               ))}
             </ol>
@@ -116,24 +148,23 @@ export default function App() {
         <Area />
 
         {/* Kontakt */}
-        <section id="kontakt" data-film="outro" data-a="0.5" data-b="1" data-dim="0.72" data-mo="1" className="pb-28 pt-16 md:pb-32 md:pt-28">
-          <div className="mx-auto grid max-w-7xl gap-8 px-4 md:px-8 lg:grid-cols-[1fr_1.35fr] lg:gap-14">
-            <div className="reveal">
-              <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Kontakt</p>
-              <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Erzählen Sie uns, worum es geht.</h2>
-              <p className="mt-4 max-w-md text-lg text-white/70">Am schnellsten geht es per Telefon oder WhatsApp. Oder Sie füllen das Formular aus – wir melden uns zurück.</p>
+        <section id="kontakt" className="bg-tile pb-28 pt-20 md:pb-32 md:pt-28">
+          <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-[1fr_1.35fr] lg:gap-16">
+            <div>
+              <h2 className={h2}>Erzählen Sie uns, worum es geht.</h2>
+              <p className="mt-5 max-w-md text-[17px] leading-relaxed text-ink-soft">Am schnellsten per Telefon oder WhatsApp. Oder Sie füllen das Formular aus, dann melden wir uns.</p>
               <div className="mt-8"><DirectContact /></div>
             </div>
-            <div className="reveal"><RequestForm preselect={pre} /></div>
+            <RequestForm preselect={pre} />
           </div>
         </section>
       </main>
 
-      <footer className="relative z-10 border-t border-white/10 bg-[#07090e] pb-24 md:pb-0">
-        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 text-sm text-white/55 md:flex-row md:items-center md:justify-between md:px-8">
-          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-6">
-            <Logo />
-            <span>{FIRMA.street}, {FIRMA.city}</span>
+      <footer className="bg-ink pb-24 text-white md:pb-0">
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-4 py-10 text-sm text-white/60 md:flex-row md:items-center md:justify-between md:px-8">
+          <div className="flex flex-col gap-3 text-white md:flex-row md:items-center md:gap-8">
+            <Logo light />
+            <span className="text-white/60">{FIRMA.street}, {FIRMA.city}</span>
           </div>
           <div className="flex flex-wrap gap-x-6 gap-y-2">
             <a href={FIRMA.tel} className="hover:text-white">{FIRMA.phone}</a>
@@ -145,9 +176,9 @@ export default function App() {
       </footer>
 
       {/* Schnellkontakt am Handy */}
-      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-white/10 bg-[#07090e] text-[13px] font-medium transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
-        <a href={FIRMA.tel} className="flex flex-col items-center gap-1 py-2.5"><Phone size={19} className="text-sky-300" />Anrufen</a>
-        <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 py-2.5"><MessageCircle size={19} className="text-[#25d366]" />WhatsApp</a>
+      <div className={`fixed inset-x-0 bottom-0 z-40 grid grid-cols-3 border-t border-line bg-white text-[13px] font-medium transition-transform duration-300 md:hidden ${scrolled ? 'translate-y-0' : 'translate-y-full'}`} style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
+        <a href={FIRMA.tel} className="flex flex-col items-center gap-1 py-2.5"><Phone size={19} className="text-water" />Anrufen</a>
+        <a href={FIRMA.wa} target="_blank" rel="noreferrer" className="flex flex-col items-center gap-1 py-2.5"><MessageCircle size={19} className="text-[#1faa53]" />WhatsApp</a>
         <button onClick={() => go('kontakt')} className="flex flex-col items-center gap-1 py-2.5"><ArrowRight size={19} />Anfrage</button>
       </div>
 
@@ -156,29 +187,86 @@ export default function App() {
   )
 }
 
-function ServiceSection({ s, i, onAsk }: { s: (typeof SERVICES)[number]; i: number; onAsk: (id: string) => void }) {
-  const Icon = ICONS[s.icon as keyof typeof ICONS]
-  const right = i % 2 === 1
+/** Leistungen: am Desktop eine waagrechte Strecke, die beim Scrollen durchläuft; am Handy untereinander. */
+function Services({ onAsk }: { onAsk: (id: string) => void }) {
+  const section = useRef<HTMLElement>(null)
+  const track = useRef<HTMLDivElement>(null)
+  const [active, setActive] = useState(0)
+  const st = useRef<ScrollTrigger | null>(null)
+
+  useEffect(() => {
+    const mm = gsap.matchMedia()
+    mm.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
+      const dist = () => track.current!.scrollWidth - innerWidth
+      const tw = gsap.to(track.current, {
+        x: () => -dist(), ease: 'none',
+        scrollTrigger: {
+          trigger: section.current, pin: true, scrub: 0.6, start: 'top top', end: () => `+=${dist()}`, invalidateOnRefresh: true,
+          onUpdate: (s) => setActive(Math.min(SERVICES.length - 1, Math.round(s.progress * (SERVICES.length - 1)))),
+        },
+      })
+      st.current = tw.scrollTrigger!
+      return () => { st.current = null }
+    })
+    return () => mm.revert()
+  }, [])
+
+  const jump = (i: number) => {
+    const s = st.current
+    if (s) scrollTo({ top: s.start + (s.end - s.start) * (i / (SERVICES.length - 1)) })
+  }
+
   return (
-    <section id={s.id} data-film={s.film} data-dim="0.3" className="min-h-[135svh] md:min-h-[165vh]">
-      <div className="sticky top-[calc(4rem+var(--win))] mx-auto max-w-7xl px-4 py-6 md:top-[max(5rem,18vh)] md:px-8 md:py-10">
-        <article className={`reveal max-w-[34rem] md:rounded-xl md:border md:border-white/10 md:bg-[#0b0e13]/92 md:p-8 ${right ? 'md:ml-auto' : ''}`}>
-          <div className="flex items-center justify-between">
-            <span className={`flex items-center gap-2 text-sm font-medium ${s.id === 'leck' ? 'text-red-400' : 'text-sky-300'}`}><Icon size={17} /> {s.label}</span>
-            <span className="text-sm tabular-nums text-white/40">{String(i + 1).padStart(2, '0')} / {String(SERVICES.length).padStart(2, '0')}</span>
+    <section ref={section} id="leistungen" className="overflow-hidden bg-white py-20 lg:flex lg:h-[100svh] lg:flex-col lg:py-0 lg:pt-24">
+      <div className="mx-auto w-full max-w-7xl px-4 md:px-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <h2 className={h2}>Was wir für Sie machen.</h2>
+          <div className="hidden flex-wrap gap-1.5 lg:flex">
+            {SERVICES.map((s, i) => (
+              <button key={s.id} aria-current={active === i} onClick={() => jump(i)}
+                className={`rounded-full px-3.5 py-1.5 text-sm transition-colors ${active === i ? 'bg-ink text-white' : 'text-ink-soft hover:bg-tile'}`}>{s.label}</button>
+            ))}
           </div>
-          <h3 className="mt-3 text-[1.6rem] font-semibold leading-tight tracking-tight md:mt-4 md:text-[2.25rem]">{s.title}</h3>
-          <p className="mt-3 text-[15px] leading-relaxed text-white/70 md:text-[16px]">{s.text}</p>
-          <ul className="mt-4 space-y-1.5 md:mt-5 md:space-y-2">
-            {s.points.map((p) => <li key={p} className="flex items-start gap-2.5 text-[15px]"><Check size={17} className="mt-0.5 shrink-0 text-sky-300" />{p}</li>)}
-          </ul>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button onClick={() => onAsk(s.id)} className={`${btn} bg-white !py-2.5 text-[#07090e] hover:bg-white/90`}>Dazu anfragen <ArrowRight size={16} /></button>
-            <a href={FIRMA.tel} className={`${btn} border border-white/20 !py-2.5 hover:border-white/45 max-md:hidden`}><Phone size={16} /> Anrufen</a>
-          </div>
-        </article>
+        </div>
+      </div>
+      <div className="lg:flex lg:flex-1 lg:items-center">
+        <div ref={track} className="mt-10 flex flex-col gap-16 px-4 md:px-8 lg:mt-0 lg:flex-row lg:gap-16 lg:pl-[max(2rem,calc((100vw-80rem)/2+2rem))] lg:pr-[8vw]">
+          {SERVICES.map((s) => (
+            <article key={s.id} id={s.id} className="scroll-mt-20 md:grid md:grid-cols-[1.2fr_1fr] md:items-center md:gap-10 lg:w-[min(72vw,1000px)] lg:shrink-0">
+              <div className="aspect-[16/10] overflow-hidden rounded-[22px] bg-tile">{s.clip ? <Clip name={s.clip} /> : <HeatPanel />}</div>
+              <div className="mt-6 md:mt-0">
+                <p className={`text-[15px] font-semibold ${s.id === 'heizung' ? 'text-signal' : 'text-water'}`}>{s.label}</p>
+                <h3 className="wide mt-2 text-[1.7rem] font-bold leading-[1.08] md:text-[2.1rem]">{s.title}</h3>
+                <p className="mt-3 text-[16px] leading-relaxed text-ink-soft">{s.text}</p>
+                <ul className="mt-4 space-y-1.5">
+                  {s.points.map((p) => <li key={p} className="flex items-start gap-2.5 text-[15px]"><Check size={17} className="mt-0.5 shrink-0 text-water" />{p}</li>)}
+                </ul>
+                <button onClick={() => onAsk(s.id)} className={`${btn} mt-6 border border-ink/15 !py-2.5 hover:border-ink/40`}>{s.label} anfragen <ArrowRight size={16} /></button>
+              </div>
+            </article>
+          ))}
+        </div>
+      </div>
+      <div className="mx-auto mt-auto hidden w-full max-w-7xl px-8 pb-8 lg:block">
+        <div className="h-[3px] rounded-full bg-tile"><div className="h-full rounded-full bg-ink transition-[width] duration-300" style={{ width: `${((active + 1) / SERVICES.length) * 100}%` }} /></div>
       </div>
     </section>
+  )
+}
+
+/** Heizung hat kein Video: Fläche im Stil der Visitenkarte mit Flamme und den drei Leistungen. */
+function HeatPanel() {
+  return (
+    <div className="relative h-full w-full bg-white">
+      <div className="absolute inset-y-0 left-0 w-[64%] bg-ink [clip-path:polygon(0_0,100%_0,72%_100%,0_100%)]" />
+      <div className="absolute inset-y-0 left-0 w-[64%] bg-water [clip-path:polygon(100%_0,calc(100%+6px)_0,calc(72%+6px)_100%,72%_100%)]" />
+      <div className="relative flex h-full flex-col justify-center gap-5 p-7 text-white md:p-9">
+        <Flame size={56} strokeWidth={1.6} className="text-signal" fill="currentColor" />
+        <ul className="wide space-y-1 text-[15px] font-bold tracking-[0.08em]">
+          {['PLANUNG', 'MONTAGE', 'WARTUNG'].map((t) => <li key={t}>{t}</li>)}
+        </ul>
+      </div>
+    </div>
   )
 }
 
@@ -189,34 +277,33 @@ function Area() {
     .map(([name, pos]) => ({ name: name.replace(/(^|-)\p{L}/gu, (c) => c.toUpperCase()), km: Math.round(distKm([HOME.lat, HOME.lon], pos)) }))
     .filter((c) => c.km > 2 && c.km <= 100).sort((a, b) => a.km - b.km), [])
   return (
-    <section id="einsatzgebiet" data-film="outro" data-a="0" data-b="0.5" data-dim="0.55" data-mo="1" className="py-16 md:py-36">
-      <div className="mx-auto grid max-w-7xl gap-10 px-4 md:px-8 lg:grid-cols-2 lg:items-start">
-        <div className="reveal">
-          <p className="text-sm font-medium uppercase tracking-[0.16em] text-sky-300">Einsatzgebiet</p>
-          <h2 className="mt-3 text-3xl font-semibold tracking-tight md:text-5xl">Bis zu 100 km rund um Gärtringen.</h2>
-          <p className="mt-4 max-w-lg text-lg text-white/70">Vom Kreis Böblingen über Stuttgart und Tübingen bis Pforzheim und Karlsruhe. Prüfen Sie Ihren Ort:</p>
-          <label className="mt-6 block max-w-md">
+    <section id="einsatzgebiet" className="border-t border-line py-20 md:py-32">
+      <div className="mx-auto grid max-w-7xl gap-12 px-4 md:px-8 lg:grid-cols-2 lg:items-start">
+        <div>
+          <h2 className={h2}>Bis zu 100 km rund um Gärtringen.</h2>
+          <p className="mt-5 max-w-lg text-[17px] leading-relaxed text-ink-soft">Vom Kreis Böblingen über Stuttgart und Tübingen bis Pforzheim und Karlsruhe. Prüfen Sie Ihren Ort:</p>
+          <label className="mt-7 block max-w-md">
             <span className="sr-only">PLZ oder Ort</span>
             <div className="relative">
-              <MapPin size={18} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-sky-300" />
+              <MapPin size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-water" />
               <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="PLZ oder Ort, z. B. 72070 Tübingen"
-                className="w-full rounded-lg border border-white/15 bg-[#0b0e13] py-3.5 pl-11 pr-4 text-[15px] outline-none placeholder:text-white/35 focus:border-sky-400" />
+                className="w-full rounded-full border border-line bg-white py-3.5 pl-11 pr-4 text-[16px] outline-none transition placeholder:text-ink-soft/60 focus:border-water" />
             </div>
           </label>
           <p className="mt-3 min-h-6 text-[15px]" aria-live="polite">
             {q.trim().length > 2 && (r.known
               ? r.inside
-                ? <span className="text-emerald-300">Ja, das liegt in unserem Einsatzgebiet{r.km ? ` – ca. ${r.km} km von Gärtringen` : ''}.</span>
-                : <span className="text-amber-300">Ca. {r.km} km – etwas weiter weg. Rufen Sie an, oft geht es trotzdem.</span>
-              : <span className="text-white/50">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
+                ? <span className="font-medium text-emerald-700">Ja, das liegt in unserem Einsatzgebiet{r.km ? `, ca. ${r.km} km von Gärtringen` : ''}.</span>
+                : <span className="font-medium text-amber-700">Ca. {r.km} km, etwas weiter weg. Rufen Sie an, oft geht es trotzdem.</span>
+              : <span className="text-ink-soft">Bitte eine 5-stellige PLZ oder einen größeren Ort eingeben.</span>)}
           </p>
         </div>
-        <div className="reveal rounded-xl border border-white/10 bg-[#0b0e13]/92 p-6 md:p-8">
-          <h3 className="text-sm font-medium uppercase tracking-[0.14em] text-white/55">Entfernung ab Gärtringen</h3>
-          <ul className="mt-4 grid grid-cols-2 gap-x-8 sm:grid-cols-3 lg:grid-cols-2 xl:grid-cols-3">
+        <div>
+          <h3 className="text-[15px] font-semibold text-ink-soft">Entfernung ab Gärtringen</h3>
+          <ul className="mt-3 grid grid-cols-2 gap-x-8 sm:grid-cols-3">
             {cities.map((c) => (
-              <li key={c.name} className="flex items-baseline justify-between border-b border-white/8 py-2.5 text-[15px]">
-                <span>{c.name}</span><span className="tabular-nums text-white/50">{c.km} km</span>
+              <li key={c.name} className="flex items-baseline justify-between border-b border-line py-2.5 text-[15px]">
+                <span>{c.name}</span><span className="tabular-nums text-ink-soft">{c.km} km</span>
               </li>
             ))}
           </ul>
