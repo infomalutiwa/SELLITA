@@ -3,3 +3,5 @@ dist
 render/out/
 render/hdri/
 render/final/
+.firebase/
+firebase-debug.log

@@ -27,9 +27,11 @@ export function BgFilm() {
     function start(m: Manifest) {
       const imgs: (HTMLImageElement | null)[] = new Array(m.count).fill(null)
       let dirty = true, next = 0
-      // erst grob (jedes 16. Bild), dann immer feiner nachladen
+      // erst grob (jedes 16. Bild), dann immer feiner nachladen; am Handy bzw. im Datensparmodus nur jedes 2. Bild
+      const conn = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection
+      const finest = conn?.saveData || innerWidth < 768 ? 2 : 1
       const order: number[] = [], seen = new Set<number>()
-      for (const step of [16, 8, 4, 2, 1]) for (let i = 0; i < m.count; i += step) if (!seen.has(i)) { seen.add(i); order.push(i) }
+      for (const step of [16, 8, 4, 2, 1].filter((s) => s >= finest)) for (let i = 0; i < m.count; i += step) if (!seen.has(i)) { seen.add(i); order.push(i) }
       const pump = () => {
         if (cancelled || next >= order.length) return
         const i = order[next++]
@@ -40,13 +42,9 @@ export function BgFilm() {
         im.src = frameUrl(m, i)
       }
       for (let k = 0; k < 6; k++) pump()
-      const nearest = (i: number) => {
-        for (let d = 0; d < m.count; d++) {
-          if (imgs[i - d]) return imgs[i - d]
-          if (imgs[i + d]) return imgs[i + d]
-        }
-        return null
-      }
+      // nächstes geladenes Bild an/vor bzw. nach Position i
+      const prevLoaded = (i: number) => { for (let j = i; j >= 0; j--) if (imgs[j]) return j; return -1 }
+      const nextLoaded = (i: number) => { for (let j = i; j < m.count; j++) if (imgs[j]) return j; return -1 }
 
       // Scroll-Position -> Filmzeit
       let keys: Key[] = []
@@ -111,12 +109,14 @@ export function BgFilm() {
         const f = Math.min(m.count - 1, Math.max(0, v.t * m.fps))
         if (!dirty && !moved && Math.abs(f - lastF) < 0.01) return
         lastF = f; dirty = false
-        const i0 = Math.floor(f), a = f - i0
-        const A = imgs[i0] || nearest(i0), B = imgs[Math.min(m.count - 1, i0 + 1)]
-        if (!A) return
+        // zwischen den zwei nächsten geladenen Bildern überblenden (auch solange noch nicht alle da sind)
+        let ia = prevLoaded(Math.floor(f)), ib = nextLoaded(Math.floor(f) + 1)
+        if (ia < 0) { ia = ib; ib = -1 }
+        if (ia < 0) return
+        const a = ib > ia ? (f - ia) / (ib - ia) : 0
         ctx.clearRect(0, 0, c.width, c.height)
-        draw(A, 1)
-        if (B && B !== A && a > 0.02) draw(B, a)
+        draw(imgs[ia]!, 1)
+        if (ib > ia && a > 0.02) draw(imgs[ib]!, a)
         ctx.globalAlpha = 1
         c.style.opacity = '1'
       }
