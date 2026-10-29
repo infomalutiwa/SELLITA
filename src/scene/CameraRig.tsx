@@ -63,7 +63,7 @@ export function CameraRig() {
   }, [])
 
   useFrame((_, dt) => {
-    if (!S.exp) S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
+    if (!S.exp && !S.video) S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
     if (S.free) {
       if (!wasFree.current && controls.current) { controls.current.target.copy(look.current); controls.current.update() }
       wasFree.current = true

@@ -49,7 +49,8 @@ export function VideoScrub({ m, onProgress }: { m: VideoManifest; onProgress: (l
       }
       return null
     }
-    let lastF = -1, raf = 0
+    S.video = true
+    let lastF = -1, raf = 0, prevT = performance.now()
     const ctx = canvas.current!.getContext('2d')!
     const resize = () => {
       const c = canvas.current!
@@ -67,8 +68,10 @@ export function VideoScrub({ m, onProgress }: { m: VideoManifest; onProgress: (l
       ctx.globalAlpha = alpha
       ctx.drawImage(im, (c.width - w) / 2, (c.height - h) / 2, w, h)
     }
-    const loop = () => {
+    const loop = (now: number = performance.now()) => {
       raf = requestAnimationFrame(loop)
+      const dt = Math.min(0.1, (now - prevT) / 1000); prevT = now
+      S.p += (S.target - S.p) * Math.min(1, dt * 3.5)
       const c = canvas.current
       if (!c) return
       c.style.opacity = String(1 - smooth(0.875, 0.9, S.p))
@@ -85,7 +88,7 @@ export function VideoScrub({ m, onProgress }: { m: VideoManifest; onProgress: (l
       ctx.globalAlpha = 1
     }
     loop()
-    return () => { cancelled = true; cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
+    return () => { S.video = false; cancelled = true; cancelAnimationFrame(raf); window.removeEventListener('resize', resize) }
   }, [m, onProgress])
 
   return (

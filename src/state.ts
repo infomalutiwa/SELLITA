@@ -8,6 +8,7 @@ export const S = {
   xrayForce: false,
   mouse: { x: 0, y: 0 },
   // Offline-Export für das vorgerenderte Video (?export): deterministische Zeit, keine Kamera-Trägheit
+  video: false, // vorgerenderter Film aktiv -> Scroll-Glättung läuft im Player statt in der 3D-Schleife
   exp: typeof location !== 'undefined' && location.search.includes('export'),
   mobile: typeof window !== 'undefined' && (window.innerWidth < 820 || /Mobi|Android/i.test(navigator.userAgent)),
 }
