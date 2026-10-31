@@ -24,12 +24,6 @@ export type Service = {
 
 export const SERVICES: Service[] = [
   {
-    id: 'heizung', clip: '', label: 'Heizung', icon: 'Flame',
-    title: 'Heizung planen, einbauen, warten',
-    text: 'Neue Heizkörper, Tausch der alten Anlage oder die jährliche Wartung: Wir planen mit Ihnen, montieren sauber und halten die Heizung danach in Schuss.',
-    points: ['Planung und Beratung', 'Montage von Heizung und Heizkörpern', 'Wartung und Reparatur'],
-  },
-  {
     id: 'sanitaer', clip: 'sanitaer', label: 'Sanitär', icon: 'Droplets',
     title: 'Sanitär, das einfach funktioniert',
     text: 'Armatur tropft, Dusche soll getauscht werden oder es braucht neue Leitungen: Wir installieren sauber und dicht.',

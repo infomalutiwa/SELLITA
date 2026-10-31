@@ -8,7 +8,8 @@ import { Logo } from './ui/Logo'
 import { CITY_LOOKUP, FIRMA, HOME, SERVICES, checkArea, distKm, type Service } from './data'
 
 const NAV = [['leistungen', 'Leistungen'], ['arbeiten', 'Arbeiten'], ['ablauf', 'Ablauf'], ['kontakt', 'Kontakt']] as const
-const poster = (s: Service) => (s.clip ? `clips/${s.clip}.webp` : 'img/heizung.webp')
+const ICON3D: Record<string, string> = { sanitaer: 'shower', leck: 'droplet', bad: 'bathtub', balkon: 'nut_and_bolt', wohnung: 'toilet', elektrik: 'wrench', moebel: 'hammer' }
+const poster = (s: Service) => `clips/${s.clip}.webp`
 
 export default function App() {
   const lenis = useRef<Lenis | null>(null)
@@ -91,9 +92,9 @@ function Hero() {
     <section className="relative overflow-hidden md:h-[calc(100svh-72px)] md:min-h-[600px]">
       <div className="relative z-10 mx-auto flex h-full max-w-[1440px] flex-col px-4 pt-[10svh] md:justify-center md:px-8 md:pt-0">
         <div className="md:w-[47%]">
-          <h1 className="t1 rise"><span><span>Heizung und</span></span><span><span>Sanitär.</span></span></h1>
+          <h1 className="t1 rise"><span><span>Sanitär und</span></span><span><span>Bäder.</span></span></h1>
           <p className="t4 after-rise mt-8 max-w-[30rem] md:text-[19px]">
-            SELLITA aus Gärtringen plant und wartet Heizungen, baut Bäder, findet Lecks und renoviert. Im Umkreis von 100 km.
+            SELLITA aus Gärtringen baut Bäder, installiert Sanitär, findet Lecks und renoviert. Im Umkreis von 100 km.
           </p>
           <div className="after-rise mt-8 flex flex-wrap items-center gap-x-7 gap-y-4">
             <a href={FIRMA.tel} className="cut cut-blue"><Phone size={17} /> {FIRMA.phone} anrufen</a>
@@ -106,6 +107,11 @@ function Hero() {
       </div>
       <div className="slant relative mt-10 h-[46svh] [--s:9svh] md:absolute md:inset-y-0 md:left-[52%] md:right-0 md:mt-0 md:h-auto md:[--s:22svh]">
         <div><div className="shutter h-full"><Clip name="sanitaer" eager /></div></div>
+      </div>
+      <div aria-hidden className="pointer-events-none absolute inset-y-0 left-[44%] z-20 hidden w-[16%] md:block">
+        {[['wrench', 'md:top-[10%] md:left-[18%]', 'w-16 md:w-28', '0s'], ['shower', 'md:top-[36%] md:left-[0%]', 'w-16 md:w-32', '-1.4s'], ['droplet', 'md:top-[62%] md:left-[22%]', 'w-14 md:w-24', '-2.6s']].map(([n, pos, w, d]) => (
+          <img key={n} src={`img/3d/${n}.png`} alt="" width={256} height={256} className={`float md:absolute ${pos} ${w}`} style={{ animationDelay: d }} />
+        ))}
       </div>
     </section>
   )
@@ -122,14 +128,17 @@ function ServiceList({ onAsk }: { onAsk: (id: string) => void }) {
       <ul className="mt-10 grid grid-cols-[minmax(0,1fr)] gap-x-16 gap-y-10 lg:grid-cols-2" data-in>
         {SERVICES.map((s) => (
           <li key={s.id} id={s.id} className="flex min-w-0 gap-5 scroll-mt-24">
-            <div className="thumb slant slant-sm h-[88px] w-[88px] shrink-0 [--s:22%]"><div><img src={poster(s)} alt="" width={88} height={88} className="h-full w-full object-cover" /></div></div>
+            <div className="relative shrink-0 self-start">
+              <div className="thumb slant slant-sm h-[88px] w-[88px] [--s:22%]"><div><img src={poster(s)} alt="" width={88} height={88} className="h-full w-full object-cover" /></div></div>
+              <img src={`img/3d/${ICON3D[s.id]}.png`} alt="" width={256} height={256} loading="lazy" className="float absolute -bottom-3 -right-4 w-14" />
+            </div>
             <div className="min-w-0 flex-1">
               <div className="flex items-baseline justify-between gap-4">
                 <h3 className="t4 min-w-0 font-bold [overflow-wrap:anywhere]">{s.label}</h3>
                 <button onClick={() => onAsk(s.id)} className="link shrink-0 font-semibold text-water">Anfragen</button>
               </div>
               <p className="mt-1 max-w-[42ch]">{s.text}</p>
-              <p className={`mt-2 font-medium ${s.id === 'heizung' ? 'text-signal' : 'text-water'}`}>{s.points.join(', ')}</p>
+              <p className={`mt-2 font-medium text-water`}>{s.points.join(', ')}</p>
             </div>
           </li>
         ))}
@@ -344,7 +353,7 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
           </address>
         </div>
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 text-muted">
-          <p>© {new Date().getFullYear()} SELLITA. Foto Heizkörper: „Radiator“ von ri, CC0, via Wikimedia Commons.</p>
+          <p>© {new Date().getFullYear()} SELLITA.</p>
           <button onClick={() => scrollTo({ top: 0, behavior: 'smooth' })} className="cut !px-6 !py-2.5">Nach oben</button>
         </div>
       </div>
