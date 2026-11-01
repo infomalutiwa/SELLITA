@@ -339,7 +339,7 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
             </div>
           </div>
           <address className="not-italic md:col-span-4">
-            <p className="font-bold">SELLITA Sanitär &amp; Bäder</p>
+            <p className="font-bold">SELLITA Dienstleistungen &amp; Leckortung</p>
             <p className="mt-3">{FIRMA.street}<br />{FIRMA.city}</p>
             <p className="mt-3"><a href={FIRMA.tel} className="link">{FIRMA.phone}</a><br /><a href={`mailto:${FIRMA.mail}`} className="link">{FIRMA.mail}</a></p>
           </address>

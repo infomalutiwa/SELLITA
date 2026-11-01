@@ -41,14 +41,14 @@ export function HouseIcon({ size = 48, line = '#b9bdc3' }: { size?: number; line
 /** Wie auf der Karte: das Zeichen auf der anthrazit Fläche mit schräger blauer Kante, daneben Name und Zeile. */
 export function Logo({ light = false }: { light?: boolean }) {
   return (
-    <span className="flex items-center gap-3">
-      <span className="badge block h-[52px] w-[86px] shrink-0">
+    <span className="flex items-center gap-2 sm:gap-3">
+      <span className="badge block h-[52px] w-[74px] shrink-0 sm:w-[86px]">
         <span className="flex h-full items-center pl-2"><HouseIcon size={62} /></span>
       </span>
       <span className="block leading-none">
         <span className={`block text-[26px] font-black leading-[0.9] [font-variation-settings:'wdth'_125] ${light ? 'text-white' : 'text-ink'}`}>SELLITA</span>
-        <span className="mt-1.5 block font-['Open_Sans',sans-serif] text-[13px] font-semibold tracking-[0.12em]">
-          <span className="text-signal">SANITÄR</span> <span className="text-[#8b8f96]">&amp;</span> <span className="text-water">BÄDER</span>
+        <span className="mt-1.5 block font-['Open_Sans',sans-serif] text-[8px] font-semibold tracking-[0.03em] sm:text-[8.5px] sm:tracking-[0.04em] lg:text-[9.5px] lg:tracking-[0.06em] whitespace-nowrap">
+          <span className="text-signal">DIENSTLEISTUNGEN</span> <span className="text-[#8b8f96]">&amp;</span> <span className="text-water">LECKORTUNG</span>
         </span>
       </span>
     </span>
