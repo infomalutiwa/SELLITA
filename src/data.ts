@@ -1,6 +1,6 @@
 export const FIRMA = {
   name: 'SELLITA',
-  sub: 'Heizung & Sanitär',
+  sub: 'Sanitär & Bäder',
   street: 'Rohrweg 20',
   city: '71116 Gärtringen',
   phone: '0178 30 14 260',
@@ -42,22 +42,10 @@ export const SERVICES: Service[] = [
     points: ['Rückbau und Entsorgung', 'Neue Wasser- und Abwasserleitungen', 'Abdichtung und Fliesen', 'Bodengleiche Dusche, Wand-WC'],
   },
   {
-    id: 'balkon', clip: 'balkon', label: 'Balkonsanierung', icon: 'Fence',
-    title: 'Den Balkon wieder dicht bekommen',
-    text: 'Risse, lose Fliesen, Wasser im Belag: Wir nehmen den alten Belag ab und bauen neu auf, mit Abdichtung, Drainage und neuen Fliesen.',
-    points: ['Alten Belag entfernen', 'Abdichtung und Drainage', 'Neuer Belag'],
-  },
-  {
     id: 'wohnung', clip: 'wohnung', label: 'Wohnungsrenovierung', icon: 'PaintRoller',
     title: 'Renoviert und bezugsfertig',
     text: 'Vor dem Einzug oder nach dem Auszug: alte Tapeten runter, Wände glätten und streichen, neuer Boden, neue Sockelleisten.',
     points: ['Wände glätten und streichen', 'Bodenbeläge', 'Sockelleisten und Details'],
-  },
-  {
-    id: 'elektrik', clip: 'elektrik', label: 'Elektrik & Montage', icon: 'Zap',
-    title: 'Steckdosen, Schalter, Leuchten',
-    text: 'Bei Renovierungen setzen wir Steckdosen und Schalter, montieren Decken- und Wandleuchten und schließen sie an.',
-    points: ['Steckdosen und Schalter', 'Decken- und Wandleuchten', 'Montage im Zuge der Renovierung'],
   },
   {
     id: 'moebel', clip: 'moebel', label: 'Möbelmontage', icon: 'Hammer',

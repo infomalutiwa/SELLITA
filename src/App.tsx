@@ -176,6 +176,7 @@ const WORK: [string, string][] = [
   ['Duschbad mit Rinne und Nische', ''],
   ['Dusche und WC, bodeneben', ''],
   ['Duschbad mit Schiebetür', ''],
+  ['Bad mit Marmoroptik und Waschtisch', ''],
 ]
 
 /** Bisherige Arbeiten: echte Bäder von Kunden, das erste groß; ein Klick öffnet das Bild. */
@@ -199,9 +200,9 @@ function Work() {
       </div>
       <ul className="mt-12 grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4" data-in>
         {WORK.map(([t], k) => (
-          <li key={k} className={k === 0 ? 'col-span-2 row-span-2' : k === WORK.length - 1 ? 'col-span-2' : ''}>
+          <li key={k} className={k === 0 ? 'col-span-2 row-span-2' : ''}>
             <button onClick={() => setOpen(k)} className="work group relative block h-full w-full overflow-hidden bg-tile text-left" aria-label={`${t} vergrößern`}>
-              <img src={`img/arbeiten/${k + 1}.webp`} alt={t} loading="lazy" className={`h-full w-full object-cover ${k === 0 ? 'aspect-[4/3] lg:aspect-auto' : k === WORK.length - 1 ? 'aspect-[3/2] lg:absolute lg:inset-0 lg:aspect-auto' : 'aspect-[3/4]'}`} />
+              <img src={`img/arbeiten/${k + 1}.webp`} alt={t} loading="lazy" className={`h-full w-full object-cover ${k === 0 ? 'aspect-[4/3] lg:aspect-auto' : 'aspect-[3/4]'}`} />
               <span className="absolute inset-x-0 bottom-0 bg-ink/85 px-4 py-3 text-sm font-semibold text-white">{t}</span>
             </button>
           </li>
@@ -223,7 +224,7 @@ function Work() {
 }
 
 const STEPS: [string, string, string][] = [
-  ['Kurz melden', 'Anruf, WhatsApp oder E-Mail. Am besten mit ein paar Fotos vom Schaden oder vom Raum, dann können wir schon vorab einschätzen, was nötig ist.', 'clips/balkon.webp'],
+  ['Kurz melden', 'Anruf, WhatsApp oder E-Mail. Am besten mit ein paar Fotos vom Schaden oder vom Raum, dann können wir schon vorab einschätzen, was nötig ist.', 'clips/sanitaer.webp'],
   ['Termin vor Ort', 'Wir schauen uns alles an, messen nach und besprechen mit Ihnen, was wirklich gemacht werden muss.', 'clips/leck.webp'],
   ['Angebot', 'Sie wissen vorher, was gemacht wird und was es kostet. Erst wenn Sie zusagen, geht es los.', 'clips/wohnung.webp'],
   ['Ausführung', 'Wir arbeiten sauber, halten Sie auf dem Laufenden und übergeben aufgeräumt.', 'clips/bad.webp'],
@@ -338,7 +339,7 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
             </div>
           </div>
           <address className="not-italic md:col-span-4">
-            <p className="font-bold">SELLITA Heizung &amp; Sanitär</p>
+            <p className="font-bold">SELLITA Sanitär &amp; Bäder</p>
             <p className="mt-3">{FIRMA.street}<br />{FIRMA.city}</p>
             <p className="mt-3"><a href={FIRMA.tel} className="link">{FIRMA.phone}</a><br /><a href={`mailto:${FIRMA.mail}`} className="link">{FIRMA.mail}</a></p>
           </address>

@@ -48,7 +48,7 @@ export function Logo({ light = false }: { light?: boolean }) {
       <span className="block leading-none">
         <span className={`block text-[26px] font-black leading-[0.9] [font-variation-settings:'wdth'_125] ${light ? 'text-white' : 'text-ink'}`}>SELLITA</span>
         <span className="mt-1.5 block font-['Open_Sans',sans-serif] text-[13px] font-semibold tracking-[0.12em]">
-          <span className="text-signal">HEIZUNG</span> <span className="text-[#8b8f96]">&amp;</span> <span className="text-water">SANITÄR</span>
+          <span className="text-signal">SANITÄR</span> <span className="text-[#8b8f96]">&amp;</span> <span className="text-water">BÄDER</span>
         </span>
       </span>
     </span>
