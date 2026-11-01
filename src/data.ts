@@ -1,6 +1,5 @@
 export const FIRMA = {
   name: 'SELLITA',
-  sub: 'Dienstleistungen & Leckortung',
   street: 'Rohrweg 20',
   city: '71116 Gärtringen',
   phone: '0178 30 14 260',
@@ -30,7 +29,7 @@ export const SERVICES: Service[] = [
     points: ['Armaturen und Duschsysteme', 'Waschtisch, WC, Eckventile', 'Kupfer- und Verbundrohr'],
   },
   {
-    id: 'leck', clip: 'leck', label: 'Leckortung', icon: 'ScanSearch',
+    id: 'leck', clip: 'leck', label: 'Leckageortung', icon: 'ScanSearch',
     title: 'Lecks finden, ohne die Wand aufzustemmen',
     text: 'Feuchte Wand, steigender Wasserzähler, Fleck an der Decke? Mit Wärmebildkamera und Feuchtemessung grenzen wir die Stelle ein, bevor irgendwo gestemmt wird.',
     points: ['Wärmebild (Thermografie)', 'Feuchtemessung im Mauerwerk', 'Gezielte Öffnung statt großer Baustelle'],
