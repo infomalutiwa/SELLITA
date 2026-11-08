@@ -1,7 +1,7 @@
 <?php
 // Kontaktformular: nimmt JSON entgegen und schickt es per Mail an den Betrieb.
 // Empfänger der Anfragen.
-const TO   = 'lucamailaender@gmail.com';
+const TO   = 'selita.service@web.de';
 const FROM = 'anfrage@sellita.de'; // muss eine Adresse der eigenen Domain sein (All-Inkl)
 
 header('Content-Type: application/json; charset=utf-8');
