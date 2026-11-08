@@ -1,6 +1,6 @@
 <?php
 // Kontaktformular: nimmt JSON entgegen und schickt es per Mail an den Betrieb.
-// TEST: Empfänger ist vorerst die Testadresse. Für den Livebetrieb TO ändern.
+// Empfänger der Anfragen.
 const TO   = 'lucamailaender@gmail.com';
 const FROM = 'anfrage@sellita.de'; // muss eine Adresse der eigenen Domain sein (All-Inkl)
 
