@@ -39,7 +39,7 @@ export function LegalModal({ kind, onClose }: { kind: LegalKind; onClose: () => 
               <div className="space-y-3">
                 <p><b>Verantwortlicher</b><br />{FIRMA.name}, {FIRMA.street}, {FIRMA.city}, E-Mail: {FIRMA.mail}</p>
                 <p><b>Hosting / Server-Logfiles</b><br />Beim Aufruf der Seite verarbeitet der Hosting-Anbieter technisch notwendige Daten (IP-Adresse, Zeitpunkt, Browser) zur sicheren Auslieferung. [Hosting-Anbieter: wird nachgereicht]</p>
-                <p><b>Anfrageformular</b><br />Ihre Eingaben werden nicht auf einem Server dieser Seite gespeichert. Erst wenn Sie „Per E-Mail senden“ oder „WhatsApp“ wählen, öffnet sich Ihr Mail- bzw. Messenger-Programm; die Übermittlung erfolgt dann über Ihren Anbieter. Verarbeitung zur Bearbeitung Ihrer Anfrage (Art. 6 Abs. 1 lit. b DSGVO).</p>
+                <p><b>Anfrageformular</b><br />Wenn Sie „Anfrage senden“ wählen, werden Ihre Angaben (Name, Telefon/E-Mail, Ort, Beschreibung) über den Server dieser Seite per E-Mail an uns übermittelt. Sie werden dort nicht dauerhaft gespeichert und nur zur Bearbeitung Ihrer Anfrage verwendet (Art. 6 Abs. 1 lit. b DSGVO). Bei „WhatsApp“ oder „E-Mail“ erfolgt die Übermittlung über Ihren jeweiligen Anbieter.</p>
                 <p><b>Externe Dienste</b><br />Es werden keine Tracking- oder Analyse-Dienste und keine externen Schriftarten (die Schrift liegt auf dieser Seite) geladen.</p>
                 <p><b>Ihre Rechte</b><br />Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch und Beschwerde bei der zuständigen Aufsichtsbehörde (LfDI Baden-Württemberg).</p>
                 <p className="text-xs text-muted">Muster-Datenschutzhinweis – bitte rechtlich prüfen lassen.</p>

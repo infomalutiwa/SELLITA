@@ -5,12 +5,14 @@ import { FIRMA, SERVICES, checkArea } from '../data'
 // Felder als hellere Fläche im Blau des Coupons, ohne Rahmen
 const inp = 'block h-[54px] w-full bg-white/14 px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/80 focus:bg-white/24'
 
-/** Anfrage als Coupon zum Abtrennen: links die Überschrift, rechts die Felder. Abgeschickt wird per WhatsApp oder E-Mail. */
+/** Anfrage als Coupon zum Abtrennen: links die Überschrift, rechts die Felder. Abgeschickt wird per Formular (send.php), WhatsApp oder E-Mail. */
 export function CouponForm({ preselect }: { preselect: { id: string; n: number } | null }) {
   const [service, setService] = useState('')
   const [f, setF] = useState({ name: '', reach: '', ort: '', msg: '' })
   const [tried, setTried] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [state, setState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
+  const [trap, setTrap] = useState('') // Honeypot gegen Spam-Bots
   const card = useRef<HTMLFormElement>(null)
   const perf = useRef<HTMLDivElement>(null)
   useEffect(() => { if (preselect) setService(preselect.id) }, [preselect])
@@ -41,13 +43,25 @@ export function CouponForm({ preselect }: { preselect: { id: string; n: number }
   const mailto = `mailto:${FIRMA.mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
   const wa = `${FIRMA.wa}?text=${encodeURIComponent(text)}`
 
+  const send = async () => {
+    if (missing) { setTried(true); return }
+    setState('sending')
+    try {
+      const r = await fetch('/send.php', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: f.name, reach: f.reach, ort: f.ort, msg: f.msg, service: label ?? '', website: trap }),
+      })
+      const j = await r.json()
+      setState(j.ok ? 'ok' : 'error')
+    } catch { setState('error') }
+  }
   const guard = (e: React.MouseEvent) => { if (missing) { e.preventDefault(); setTried(true) } }
   const copy = async () => {
     try { await navigator.clipboard.writeText(`${FIRMA.mail}\n\n${text}`); setCopied(true); setTimeout(() => setCopied(false), 2500) } catch { /* Zwischenablage nicht verfügbar */ }
   }
 
   return (
-    <form ref={card} onSubmit={(e) => e.preventDefault()} data-lenis-prevent
+    <form ref={card} onSubmit={(e) => { e.preventDefault(); if (state !== 'sending' && state !== 'ok') send() }} data-lenis-prevent
       className="coupon relative grid bg-water text-white lg:grid-cols-[46%_54%]">
       <div className="flex flex-col justify-between gap-6 p-6 pb-8 md:p-12">
         <h2 className="t3 wide uppercase">Anfrage<br />an SELLITA</h2>
@@ -81,10 +95,17 @@ export function CouponForm({ preselect }: { preselect: { id: string; n: number }
           <textarea className={`${inp} h-28 resize-none py-3`} placeholder="Was ist passiert bzw. was soll gemacht werden?" value={f.msg} onChange={(e) => setF({ ...f, msg: e.target.value })} />
         </label>
         {tried && missing && <p className="font-semibold" role="alert">{missing}</p>}
-        <a href={wa} target="_blank" rel="noreferrer" onClick={guard}
-          className="mt-2 flex h-14 items-center justify-center bg-ink font-bold transition-[background-color,transform] duration-150 active:scale-[.98] hover:bg-[#15171b]">
-          Per WhatsApp senden
-        </a>
+        <input type="text" name="website" value={trap} onChange={(e) => setTrap(e.target.value)} tabIndex={-1} autoComplete="off" aria-hidden className="absolute -left-[9999px] h-0 w-0 opacity-0" />
+        {state === 'ok' ? (
+          <p className="mt-2 flex min-h-14 items-center bg-ink px-4 font-bold" role="status">Danke, Ihre Anfrage ist bei uns angekommen. Wir melden uns bei Ihnen.</p>
+        ) : (
+          <button type="submit" disabled={state === 'sending'}
+            className="mt-2 flex h-14 items-center justify-center bg-ink font-bold transition-[background-color,transform] duration-150 active:scale-[.98] hover:bg-[#15171b] disabled:opacity-70">
+            {state === 'sending' ? 'Wird gesendet …' : 'Anfrage senden'}
+          </button>
+        )}
+        {state === 'error' && <p className="font-semibold" role="alert">Das Senden hat nicht geklappt. Bitte per WhatsApp, E-Mail oder Telefon melden.</p>}
+        <a href={wa} target="_blank" rel="noreferrer" onClick={guard} className="link font-semibold">Oder per WhatsApp senden</a>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-1">
           <a href={mailto} onClick={guard} className="link font-semibold">Lieber per E-Mail senden</a>
           <button type="button" onClick={() => (missing ? setTried(true) : copy())} className="link flex items-center gap-1.5">
