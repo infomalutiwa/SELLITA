@@ -68,7 +68,7 @@ export default function App() {
         <Steps />
         <Area />
         <section id="kontakt" className="px-4 py-24 md:px-8 md:py-36">
-          <div className="mx-auto max-w-[1120px]" data-in><CouponForm preselect={pre} /></div>
+          <div className="mx-auto max-w-[1120px]" data-in><CouponForm preselect={pre} onLegal={setLegal} /></div>
         </section>
       </main>
 

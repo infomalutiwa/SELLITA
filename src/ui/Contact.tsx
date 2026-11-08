@@ -1,12 +1,71 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Check, Copy } from 'lucide-react'
+import { Check, ChevronDown, Copy } from 'lucide-react'
+import type { LegalKind } from './LegalModal'
 import { FIRMA, SERVICES, checkArea } from '../data'
 
 // Felder als hellere Fläche im Blau des Coupons, ohne Rahmen
 const inp = 'block h-[54px] w-full bg-white/14 px-4 text-[16px] text-white outline-none transition-colors placeholder:text-white/80 focus:bg-white/24'
 
 /** Anfrage als Coupon zum Abtrennen: links die Überschrift, rechts die Felder. Abgeschickt wird per Formular (send.php), WhatsApp oder E-Mail. */
-export function CouponForm({ preselect }: { preselect: { id: string; n: number } | null }) {
+/** Eigenes Auswahlmenü statt des Browser-Standards: Tastatur (Pfeile, Enter, Esc, Buchstaben) und Screenreader (listbox) funktionieren. */
+function Pick({ value, onChange }: { value: string; onChange: (id: string) => void }) {
+  const [open, setOpen] = useState(false)
+  const [hi, setHi] = useState(0)
+  const root = useRef<HTMLDivElement>(null)
+  const items = [{ id: '', label: 'Worum geht es? (Leistung wählen)' }, ...SERVICES.map((s) => ({ id: s.id, label: s.label }))]
+  const cur = items.find((i) => i.id === value) ?? items[0]
+
+  useEffect(() => {
+    if (!open) return
+    const away = (e: PointerEvent) => { if (!root.current?.contains(e.target as Node)) setOpen(false) }
+    addEventListener('pointerdown', away)
+    return () => removeEventListener('pointerdown', away)
+  }, [open])
+
+  const show = () => { setHi(Math.max(0, items.findIndex((i) => i.id === value))); setOpen(true) }
+  const pick = (i: number) => { onChange(items[i].id); setOpen(false) }
+  const key = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') { setOpen(false); return }
+    if (e.key === 'Tab') { setOpen(false); return }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault()
+      if (!open) { show(); return }
+      setHi((h) => (h + (e.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length)
+    } else if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      open ? pick(hi) : show()
+    } else if (e.key.length === 1) {
+      const n = items.findIndex((i, idx) => idx > 0 && i.label.toLowerCase().startsWith(e.key.toLowerCase()))
+      if (n > 0) { setHi(n); if (!open) setOpen(true) }
+    }
+  }
+
+  return (
+    <div ref={root} className="relative">
+      <button type="button" role="combobox" aria-haspopup="listbox" aria-expanded={open} aria-controls="leistung-liste" aria-label="Leistung"
+        onClick={() => (open ? setOpen(false) : show())} onKeyDown={key}
+        className={`${inp} flex items-center justify-between gap-3 text-left ${open ? 'bg-white/24' : ''} ${value ? '' : 'text-white/80'}`}>
+        <span className="truncate">{cur.label}</span>
+        <ChevronDown size={20} aria-hidden className={`shrink-0 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <ul id="leistung-liste" role="listbox" data-lenis-prevent
+          className="absolute inset-x-0 top-full z-20 mt-1 max-h-72 overflow-y-auto bg-white py-1 text-ink shadow-xl"> {/* taste-skill-ignore: Auswahlliste liegt über dem Formular */}
+          {items.map((it, i) => (
+            <li key={it.id || 'none'} role="option" aria-selected={it.id === value}
+              onPointerEnter={() => setHi(i)} onClick={() => pick(i)}
+              className={`flex min-h-12 cursor-pointer items-center justify-between gap-3 px-4 text-[16px] ${i === 0 ? 'text-muted' : 'font-semibold'} ${hi === i ? 'bg-tile' : ''}`}>
+              <span>{it.label}</span>
+              {it.id === value && <Check size={18} className="text-water" aria-hidden />}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  )
+}
+
+export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n: number } | null; onLegal: (k: LegalKind) => void }) {
   const [service, setService] = useState('')
   const [f, setF] = useState({ name: '', reach: '', ort: '', msg: '' })
   const [tried, setTried] = useState(false)
@@ -73,12 +132,7 @@ export function CouponForm({ preselect }: { preselect: { id: string; n: number }
       </div>
       <div ref={perf} className="perf mx-6 h-[5px] lg:absolute lg:inset-y-6 lg:left-[46%] lg:mx-0 lg:h-auto lg:w-[5px] lg:-translate-x-1/2" aria-hidden />
       <div className="flex flex-col gap-2.5 p-6 pt-8 md:p-12">
-        <label><span className="sr-only">Leistung</span>
-          <select value={service} onChange={(e) => setService(e.target.value)} className={`${inp} appearance-none`}>
-            <option value="" className="text-ink">Worum geht es? (Leistung wählen)</option>
-            {SERVICES.map((s) => <option key={s.id} value={s.id} className="text-ink">{s.label}</option>)}
-          </select>
-        </label>
+        <Pick value={service} onChange={setService} />
         <label><span className="sr-only">Name</span>
           <input className={inp} placeholder="Ihr Name" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </label>
@@ -105,6 +159,10 @@ export function CouponForm({ preselect }: { preselect: { id: string; n: number }
           </button>
         )}
         {state === 'error' && <p className="font-semibold" role="alert">Das Senden hat nicht geklappt. Bitte per WhatsApp, E-Mail oder Telefon melden.</p>}
+        <p className="text-[14px] leading-snug text-white/90">
+          Mit dem Absenden werden Ihre Angaben per E-Mail an uns übermittelt und nur zur Bearbeitung Ihrer Anfrage verwendet. Mehr dazu in der{' '}
+          <button type="button" onClick={() => onLegal('datenschutz')} className="link font-semibold">Datenschutzerklärung</button>.
+        </p>
         <a href={wa} target="_blank" rel="noreferrer" onClick={guard} className="link font-semibold">Oder per WhatsApp senden</a>
         <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 pt-1">
           <a href={mailto} onClick={guard} className="link font-semibold">Lieber per E-Mail senden</a>
