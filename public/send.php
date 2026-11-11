@@ -1,7 +1,7 @@
 <?php
 // Kontaktformular: nimmt JSON entgegen und schickt es per Mail an den Betrieb.
 // Empfänger der Anfragen.
-const TO   = 'lucamailaender@gmail.com';
+const TO   = 'selita.service@web.de';
 const FROM = 'anfrage@sellita.de'; // muss eine Adresse der eigenen Domain sein (All-Inkl)
 
 header('Content-Type: application/json; charset=utf-8');
@@ -27,12 +27,14 @@ if (is_file($lock) && time() - filemtime($lock) < 30) out(429, false, 'Bitte kur
 
 $clean = static fn($v, int $max) => mb_substr(trim(preg_replace('/[\r\n]+/', ' ', (string)($v ?? ''))), 0, $max);
 $name    = $clean($in['name'] ?? '', 100);
-$reach   = $clean($in['reach'] ?? '', 150);
+$tel     = $clean($in['tel'] ?? '', 60);
+$mail    = $clean($in['mail'] ?? '', 150);
 $service = $clean($in['service'] ?? '', 80);
 $ort     = $clean($in['ort'] ?? '', 100);
 $msg     = mb_substr(trim(str_replace("\r", '', (string)($in['msg'] ?? ''))), 0, 3000);
 
-if ($name === '' || $reach === '') out(422, false, 'Name und Kontakt fehlen.');
+if ($name === '' || $tel === '') out(422, false, 'Name und Telefon fehlen.');
+if (!filter_var($mail, FILTER_VALIDATE_EMAIL)) out(422, false, 'Gültige E-Mail-Adresse fehlt.');
 
 $subject = 'Anfrage' . ($service ? ': ' . $service : '') . ' – ' . $name;
 $body = implode("\n", [
@@ -41,15 +43,16 @@ $body = implode("\n", [
   'Ort: ' . ($ort ?: '-'),
   'Beschreibung: ' . ($msg ?: '-'), '',
   'Name: ' . $name,
-  'Erreichbar unter: ' . $reach,
+  'Telefon: ' . $tel,
+  'E-Mail: ' . $mail,
 ]);
 
 $headers = [
   'From: SELLITA Website <' . FROM . '>',
   'Content-Type: text/plain; charset=UTF-8',
 ];
-// Antworten geht direkt an den Kunden, wenn er eine E-Mail angegeben hat.
-if (filter_var($reach, FILTER_VALIDATE_EMAIL)) $headers[] = 'Reply-To: ' . $reach;
+// Antworten geht direkt an den Kunden.
+$headers[] = 'Reply-To: ' . $mail;
 
 $ok = mail(TO, '=?UTF-8?B?' . base64_encode($subject) . '?=', $body, implode("\r\n", $headers), '-f' . FROM);
 if (!$ok) out(500, false, 'Versand fehlgeschlagen.');

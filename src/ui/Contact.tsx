@@ -67,7 +67,7 @@ function Pick({ value, onChange }: { value: string; onChange: (id: string) => vo
 
 export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n: number } | null; onLegal: (k: LegalKind) => void }) {
   const [service, setService] = useState('')
-  const [f, setF] = useState({ name: '', reach: '', ort: '', msg: '' })
+  const [f, setF] = useState({ name: '', tel: '', mail: '', ort: '', msg: '' })
   const [tried, setTried] = useState(false)
   const [copied, setCopied] = useState(false)
   const [state, setState] = useState<'idle' | 'sending' | 'ok' | 'error'>('idle')
@@ -87,7 +87,9 @@ export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n:
 
   const label = SERVICES.find((s) => s.id === service)?.label
   const area = useMemo(() => checkArea(f.ort), [f.ort])
-  const missing = !f.name.trim() ? 'Bitte Ihren Namen angeben.' : !f.reach.trim() ? 'Bitte Telefon oder E-Mail angeben, damit wir Sie erreichen.' : ''
+  const missing = !f.name.trim() ? 'Bitte Ihren Namen angeben.'
+    : !f.tel.trim() ? 'Bitte Ihre Telefonnummer angeben, damit wir Sie erreichen.'
+    : !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.mail.trim()) ? 'Bitte eine gültige E-Mail-Adresse angeben.' : ''
   const text = [
     'Hallo SELLITA, ich habe eine Anfrage:',
     '',
@@ -96,7 +98,8 @@ export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n:
     ...(f.msg ? [`Beschreibung: ${f.msg}`] : []),
     '',
     `Name: ${f.name}`,
-    `Erreichbar unter: ${f.reach}`,
+    `Telefon: ${f.tel}`,
+    `E-Mail: ${f.mail}`,
   ].join('\n')
   const subject = `Anfrage${label ? ': ' + label : ''} – ${f.name || 'Website'}`
   const mailto = `mailto:${FIRMA.mail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(text)}`
@@ -108,7 +111,7 @@ export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n:
     try {
       const r = await fetch('/send.php', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: f.name, reach: f.reach, ort: f.ort, msg: f.msg, service: label ?? '', website: trap }),
+        body: JSON.stringify({ name: f.name, tel: f.tel, mail: f.mail.trim(), ort: f.ort, msg: f.msg, service: label ?? '', website: trap }),
       })
       const j = await r.json()
       setState(j.ok ? 'ok' : 'error')
@@ -120,7 +123,7 @@ export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n:
   }
 
   return (
-    <form ref={card} onSubmit={(e) => { e.preventDefault(); if (state !== 'sending' && state !== 'ok') send() }} data-lenis-prevent
+    <form ref={card} noValidate onSubmit={(e) => { e.preventDefault(); if (state !== 'sending' && state !== 'ok') send() }} data-lenis-prevent
       className="coupon relative grid bg-water text-white lg:grid-cols-[46%_54%]">
       <div className="flex flex-col justify-between gap-6 p-6 pb-8 md:p-12">
         <h2 className="t3 wide uppercase">Anfrage<br />an SELLITA</h2>
@@ -136,8 +139,11 @@ export function CouponForm({ preselect, onLegal }: { preselect: { id: string; n:
         <label><span className="sr-only">Name</span>
           <input className={inp} placeholder="Ihr Name" autoComplete="name" value={f.name} onChange={(e) => setF({ ...f, name: e.target.value })} />
         </label>
-        <label><span className="sr-only">Telefon oder E-Mail</span>
-          <input className={inp} placeholder="Telefon oder E-Mail" autoComplete="tel" value={f.reach} onChange={(e) => setF({ ...f, reach: e.target.value })} />
+        <label><span className="sr-only">Telefon</span>
+          <input className={inp} type="tel" placeholder="Telefon" autoComplete="tel" value={f.tel} onChange={(e) => setF({ ...f, tel: e.target.value })} />
+        </label>
+        <label><span className="sr-only">E-Mail</span>
+          <input className={inp} type="email" inputMode="email" placeholder="E-Mail" autoComplete="email" value={f.mail} onChange={(e) => setF({ ...f, mail: e.target.value })} />
         </label>
         <label><span className="sr-only">PLZ oder Ort des Objekts</span>
           <input className={inp} placeholder="PLZ oder Ort des Objekts" autoComplete="postal-code" aria-describedby="ort-hint" value={f.ort} onChange={(e) => setF({ ...f, ort: e.target.value })} />
