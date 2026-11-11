@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Lenis from 'lenis'
-import { MapPin, MessageCircle, Phone } from 'lucide-react'
+import { MapPin, MessageCircle, Phone, Heart } from 'lucide-react'
 import { Clip } from './ui/Clip'
 import { CouponForm } from './ui/Contact'
 import { LegalModal, type LegalKind } from './ui/LegalModal'
@@ -346,6 +346,7 @@ function Footer({ onLegal, go }: { onLegal: (k: LegalKind) => void; go: (id: str
         </div>
         <div className="mt-14 flex flex-wrap items-center justify-between gap-4 text-muted">
           <p>© {new Date().getFullYear()} SELLITA.</p>
+          <p className="flex items-center gap-1.5">Designed with <Heart size={15} className="fill-signal text-signal" role="img" aria-label="Liebe" /> by <span className="font-bold text-ink">Malutiwa</span></p>
           <button onClick={() => scrollTo({ top: 0, behavior: 'smooth' })} className="cut !px-6 !py-2.5">Nach oben</button>
         </div>
       </div>
