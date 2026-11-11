@@ -82,6 +82,11 @@
 
   footer { background: #11161e; color: #8b96a8; text-align: center; padding: 22px 0; font-size: .9rem; }
   footer strong { color: var(--white); }
+  .signature { display: flex; align-items: center; justify-content: center; gap: 7px; margin-top: 16px; padding-top: 16px; border-top: 1px solid rgba(255,255,255,.08); font-size: .72rem; letter-spacing: .18em; text-transform: uppercase; color: #6b7688; }
+  .signature svg { width: 13px; height: 13px; fill: var(--red); flex: none; animation: beat 2.4s ease-in-out infinite; }
+  .signature b { color: var(--white); font-weight: 700; letter-spacing: .22em; }
+  @keyframes beat { 0%, 30%, 100% { transform: scale(1); } 15% { transform: scale(1.2); } }
+  @media (prefers-reduced-motion: reduce) { .signature svg { animation: none; } }
 </style>
 </head>
 <body>
@@ -174,7 +179,13 @@
 </main>
 
 <footer>
-  <div class="wrap">© <span id="y"></span> <strong>Sellita</strong> Heizung &amp; Sanitär · Rohrweg 20 · 71116 Gärtringen</div>
+  <div class="wrap">© <span id="y"></span> <strong>Sellita</strong> Heizung &amp; Sanitär · Rohrweg 20 · 71116 Gärtringen
+    <div class="signature">
+      <span>Designed with</span>
+      <svg viewBox="0 0 24 24" role="img" aria-label="Liebe"><path d="M12 21s-7.5-4.6-10-9.3C.3 8.4 1.9 4.5 5.6 4.1c2-.2 3.7.8 4.9 2.4L12 8.4l1.5-1.9c1.2-1.6 2.9-2.6 4.9-2.4 3.7.4 5.3 4.3 3.6 7.6C19.5 16.4 12 21 12 21z"/></svg>
+      <span>by <b>Malutiwa</b></span>
+    </div>
+  </div>
 </footer>
 <script>document.getElementById('y').textContent = new Date().getFullYear();</script>
 </body>
